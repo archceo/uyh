@@ -1,0 +1,2522 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>КАРТОГРАФИЧЕСКИЙ КОНСТРУКТОР — подготовка к ЦТ по географии 2026–2027</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --blue:#0e9ae0; --blue2:#39c2f0; --dark:#0c4c6e; --ink:#17303f;
+    --green:#2eb84a; --red:#ef5f3c; --amber:#f0a000; --paper:#f8f4ea;
+  }
+  html{height:100%}
+  body{min-height:100%;font-family:"Segoe UI",system-ui,-apple-system,sans-serif;
+    background:#e9f3fb;color:var(--ink);padding-bottom:40px}
+  canvas{display:block}
+
+  /* ---------- header ---------- */
+  header#top{background:linear-gradient(90deg,#0c4c6e 0%,#0e9ae0 55%,#39c2f0 100%);
+    color:#fff;padding:12px 16px;display:flex;align-items:center;gap:14px;
+    box-shadow:0 4px 18px rgba(0,30,60,.28)}
+  .brand b{font-size:17px;letter-spacing:.5px;display:block}
+  .brand span{font-size:11.5px;opacity:.9;font-weight:600}
+  header#top .right{margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .pill{background:rgba(255,255,255,.17);border:1px solid rgba(255,255,255,.4);
+    border-radius:999px;padding:6px 13px;font-size:13px;font-weight:800;white-space:nowrap}
+  .pill b{font-size:15px}
+
+  /* ---------- tabs ---------- */
+  nav#tabs{position:sticky;top:0;z-index:25;background:rgba(255,255,255,.95);
+    backdrop-filter:blur(6px);box-shadow:0 3px 12px rgba(0,30,60,.12);
+    display:flex;gap:6px;padding:8px 12px;overflow-x:auto;scrollbar-width:thin}
+  .tab{border:none;background:#eef5fa;color:#2b6c8e;font:inherit;font-size:14px;font-weight:800;
+    padding:9px 15px;border-radius:999px;cursor:pointer;white-space:nowrap;transition:.15s;
+    border:2px solid #d5e7f3}
+  .tab:hover{background:#dff1fd;border-color:var(--blue2)}
+  .tab.on{background:linear-gradient(90deg,#0e9ae0,#39c2f0);color:#fff;border-color:#0e9ae0;
+    box-shadow:0 5px 14px rgba(14,154,224,.35)}
+
+  /* ---------- screens / layout ---------- */
+  .screen{display:none}
+  .screen.on{display:block;animation:fade .25s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .work{display:grid;grid-template-columns:minmax(0,1fr) 420px;gap:18px;
+    padding:16px;max-width:1460px;margin:0 auto;align-items:start}
+  .mapWrap{position:relative;background:#fff;border:3px solid #fff;border-radius:18px;
+    overflow:hidden;box-shadow:0 12px 34px rgba(0,30,60,.16)}
+  .mapWrap canvas{width:100%;height:auto;background:var(--paper);touch-action:none}
+  .tools{display:flex;gap:7px;flex-wrap:wrap;padding:9px;background:#f3f9fe;border-top:2px solid #e2eefa}
+  .tool{border:2px solid #cfe2ef;background:#fff;color:#24607f;font:inherit;font-size:12.5px;
+    font-weight:800;padding:6px 11px;border-radius:999px;cursor:pointer;transition:.15s}
+  .tool:hover{border-color:var(--blue2);background:#f0faff}
+  .tool.on{background:linear-gradient(90deg,#0e9ae0,#39c2f0);color:#fff;border-color:#0e9ae0}
+  .cap{font-size:12px;color:#5b829a;font-weight:700;padding:7px 4px 0;line-height:1.45}
+
+  /* ---------- panel ---------- */
+  .panel{background:linear-gradient(160deg,#fff,#eef8ff);border:3px solid #fff;border-radius:24px;
+    padding:16px 18px 18px;box-shadow:0 16px 44px rgba(0,30,60,.2);position:sticky;top:62px}
+  .pHead{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px}
+  .badge{background:linear-gradient(90deg,#0e9ae0,#39c2f0);color:#fff;font-size:11.5px;font-weight:800;
+    padding:5px 12px;border-radius:999px;letter-spacing:.4px;text-transform:uppercase}
+  .cnt{font-size:13px;font-weight:700;color:#5b829a}
+  .prog{display:flex;gap:5px;margin-bottom:12px}
+  .prog i{flex:1;height:8px;border-radius:6px;background:#d5e5f0;transition:.3s}
+  .prog i.on{background:linear-gradient(90deg,#39c2f0,#0e9ae0)}
+  .prog i.ok{background:linear-gradient(90deg,#6ddc72,#2eb84a)}
+  .prog i.bad{background:linear-gradient(90deg,#ff9d7a,#ef5f3c)}
+  .q{font-size:17px;font-weight:800;color:#123449;line-height:1.4;margin-bottom:12px}
+  .sub{font-size:13.5px;color:#4a7590;font-weight:600;line-height:1.5;margin:-6px 0 12px}
+  .fields{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+  .fld{display:flex;flex-direction:column;gap:4px}
+  .fld label{font-size:11.5px;font-weight:800;color:#5b829a;text-transform:uppercase;letter-spacing:.3px}
+  .fld input,.fld select{font:inherit;font-size:16px;font-weight:700;padding:9px 11px;border-radius:12px;
+    border:2px solid #cfe2ef;background:#fff;color:#123449;outline:none;min-width:88px}
+  .fld input:focus,.fld select:focus{border-color:var(--blue2);box-shadow:0 0 0 3px rgba(57,194,240,.25)}
+  .fld input.big{min-width:140px}
+  .opt{display:flex;align-items:center;gap:10px;width:100%;text-align:left;cursor:pointer;background:#fff;
+    border:2px solid #cfe2ef;border-radius:14px;padding:11px 12px;margin-bottom:9px;font-size:15px;
+    font-weight:600;color:#20495f;transition:.15s;font-family:inherit}
+  .opt:hover{border-color:var(--blue2);background:#f0faff;transform:translateX(3px)}
+  .opt .letter{flex:0 0 28px;height:28px;border-radius:9px;background:#e8f3fb;color:#0e9ae0;font-weight:800;
+    display:flex;align-items:center;justify-content:center;font-size:14px}
+  .opt.correct{border-color:var(--green);background:#eafbe9}
+  .opt.correct .letter{background:var(--green);color:#fff}
+  .opt.wrong{border-color:var(--red);background:#fdeeea}
+  .opt.wrong .letter{background:var(--red);color:#fff}
+  .opt:disabled{cursor:default;transform:none}
+  .btn{display:inline-block;border:none;border-radius:14px;padding:12px 22px;font-size:16px;font-weight:800;
+    font-family:inherit;color:#fff;cursor:pointer;background:linear-gradient(90deg,#0e9ae0,#39c2f0);
+    box-shadow:0 6px 16px rgba(14,154,224,.4);transition:.15s}
+  .btn:hover{transform:translateY(-2px);filter:brightness(1.07)}
+  .btn:active{transform:translateY(0)}
+  .btn.full{width:100%}
+  .btn.green{background:linear-gradient(90deg,#2eb84a,#6ddc72);box-shadow:0 6px 16px rgba(46,184,74,.4)}
+  .btn.ghost{background:#eef5fa;color:#2b6c8e;box-shadow:none;border:2px solid #cfe2ef;font-size:14px;padding:9px 16px}
+  .btn.grey{background:linear-gradient(90deg,#7a94a6,#a8bcc9);box-shadow:0 6px 16px rgba(90,120,140,.3)}
+  .fb{display:none;margin-top:12px;animation:pop .3s ease}
+  .fb.show{display:block}
+  .fb .verdict{font-weight:800;font-size:15px;margin-bottom:7px}
+  .fb .verdict.ok{color:var(--green)}
+  .fb .verdict.no{color:var(--red)}
+  .fact{background:linear-gradient(140deg,#fff8e1,#ffefc2);border:2px dashed #f2c14e;border-radius:14px;
+    padding:11px 13px;font-size:13.8px;line-height:1.5;color:#6b4c00;margin-bottom:12px}
+  .fact b{display:block;margin-bottom:4px;color:#c47f00}
+  .row{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+  .row .btn{flex:1;min-width:130px;text-align:center}
+  @keyframes pop{from{opacity:0;transform:scale(.94) translateY(10px)}to{opacity:1;transform:none}}
+
+  /* ---------- dictation ---------- */
+  .dictWrap{max-width:860px;margin:0 auto;padding:16px}
+  .dots{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:14px}
+  .dots i{width:20px;height:20px;border-radius:6px;background:#d5e5f0;border:2px solid #c2d8e8;
+    font-style:normal;font-size:10.5px;font-weight:800;color:#5b829a;display:flex;align-items:center;
+    justify-content:center}
+  .dots i.ok{background:#eafbe9;border-color:var(--green);color:#1c7a33}
+  .dots i.bad{background:#fdeeea;border-color:var(--red);color:#b03a1c}
+  .dots i.on{background:#ffe08a;border-color:#f2b705;color:#7a5200;transform:scale(1.15)}
+
+  /* ---------- help ---------- */
+  .help{max-width:900px;margin:0 auto;padding:18px}
+  .hCard{background:#fff;border:3px solid #fff;border-radius:22px;padding:20px 24px;margin-bottom:14px;
+    box-shadow:0 10px 30px rgba(0,30,60,.12)}
+  .hCard h3{font-size:19px;color:var(--dark);margin-bottom:10px}
+  .hCard h4{font-size:15.5px;color:#0e6a99;margin:14px 0 6px}
+  .hCard p,.hCard li{font-size:14.5px;line-height:1.62;color:#33607c;margin-bottom:7px}
+  .hCard ul{padding-left:20px}
+  .hCard b{color:#123449}
+  .formula{background:#eef8ff;border:2px dashed #a9d8f5;border-radius:12px;padding:11px 14px;
+    font-size:15px;font-weight:700;color:#0c4c6e;margin:8px 0}
+  table.ct{width:100%;border-collapse:collapse;font-size:14px;margin-top:8px}
+  table.ct th,table.ct td{border:2px solid #d5e7f3;padding:8px 10px;text-align:left}
+  table.ct th{background:#eef8ff;color:#0c4c6e;font-size:13px}
+  table.ct td:last-child{font-weight:800;color:#0e6a99;white-space:nowrap}
+
+  /* ---------- modal ---------- */
+  #modal{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;
+    background:rgba(6,22,36,.5);padding:20px;transition:opacity .25s}
+  #modal.hidden{opacity:0;pointer-events:none}
+  .card{width:min(660px,100%);max-height:86vh;overflow:auto;background:linear-gradient(165deg,#fff,#eef8ff);
+    border:4px solid #fff;border-radius:28px;padding:28px 30px;text-align:center;
+    box-shadow:0 24px 70px rgba(0,15,35,.5);animation:pop .35s ease}
+  .card h1{font-size:31px;margin-bottom:6px;color:var(--dark)}
+  .card h2{font-size:25px;margin-bottom:8px;color:var(--dark)}
+  .card p{font-size:15.5px;line-height:1.55;color:#33607c;margin-bottom:12px}
+  .card .bigEmoji{font-size:54px;margin-bottom:6px;display:block}
+  .secBtns{display:flex;flex-direction:column;gap:11px;margin:14px 0 6px}
+  .secBtns .btn{width:100%;padding:13px 20px;font-size:17px}
+  .scoreLine{font-size:20px;font-weight:800;color:#e08000;margin:6px 0}
+  .rank{font-size:25px;font-weight:900;color:var(--dark);margin:8px 0}
+  .chips{display:flex;flex-wrap:wrap;gap:7px;justify-content:center;margin:12px 0 6px}
+  .chip{background:#e9f6ff;border:1.5px solid #bfe3fa;color:#136590;font-size:12.5px;font-weight:700;
+    padding:5px 11px;border-radius:999px}
+
+  #loadErr{position:fixed;inset:0;z-index:99;display:none;align-items:center;justify-content:center;
+    background:#0c1b2a;color:#cfe8f7;text-align:center;padding:30px;font-size:17px;line-height:1.6}
+
+  @media (max-width:1050px){
+    .work{grid-template-columns:minmax(0,1fr) 360px;padding:12px;gap:12px}
+    .panel{position:static}
+  }
+  @media (max-width:860px){
+    .work{grid-template-columns:minmax(0,1fr)}
+    .brand b{font-size:14.5px} .brand span{font-size:10.5px}
+    .pill{font-size:11.5px;padding:5px 10px} .pill b{font-size:13px}
+    nav#tabs{gap:5px;padding:7px 8px} .tab{font-size:12.5px;padding:8px 12px}
+    .q{font-size:16px}
+    .card{padding:22px 18px} .card h1{font-size:24px}
+    table.ct,table.var{display:block;overflow-x:auto;white-space:nowrap}
+  }
+  @media (max-width:560px){
+    header#top{flex-wrap:wrap;gap:8px}
+    header#top .right{margin-left:0}
+    .brand b{font-size:13.5px}
+  }
+</style>
+</head>
+<body>
+
+<header id="top">
+  <div class="brand">🧭 <b>КАРТОГРАФИЧЕСКИЙ КОНСТРУКТОР</b>
+    <span>подготовка к ЦТ по географии · 2026–2027</span></div>
+  <div class="right">
+    <div class="pill">⭐ очки <b id="totalScore">0</b></div>
+    <div class="pill">✅ лучший вариант <b id="bestVar">—</b></div>
+  </div>
+</header>
+
+<nav id="tabs">
+  <button class="tab on" data-mode="topo">🗺️ Топокарта 1:25 000</button>
+  <button class="tab" data-mode="profile">⛰️ Профиль местности</button>
+  <button class="tab" data-mode="world">🌍 Контурная карта</button>
+  <button class="tab" data-mode="dict">✍️ Географический диктант</button>
+  <button class="tab" data-mode="variant">🧪 Вариант ЦТ на 100</button>
+  <button class="tab" data-mode="help">📖 Справка</button>
+</nav>
+
+<!-- ================= ТОПОКАРТА ================= -->
+<section class="screen on" id="sc-topo">
+  <div class="work">
+    <div>
+      <div class="mapWrap">
+        <canvas id="topoCv" width="900" height="900"></canvas>
+        <div class="tools">
+          <button class="tool on" id="btnGrid">📐 Километровая сетка</button>
+          <button class="tool" id="btnLegend">📖 Условные знаки</button>
+          <button class="tool" id="btnShowAns">👀 Показать ответ</button>
+          <button class="tool" id="btnNewMap">🎲 Новая карта</button>
+        </div>
+      </div>
+      <div class="cap" id="topoCap">Масштаб 1:25 000 (в дне 1 см — 250 м). Сторона квадрата сетки — 1 км.
+        Номер квадрата: сначала номер нижней горизонтальной линии (северная координата), затем номер левой вертикальной.</div>
+    </div>
+    <aside class="panel">
+      <div class="pHead"><span class="badge" id="tpTag">Топокарта</span><span class="cnt" id="tpCnt"></span></div>
+      <div class="prog" id="tpProg"></div>
+      <div class="q" id="tpQ">…</div>
+      <div id="tpIn"></div>
+      <button class="btn full" id="tpCheck">Проверить</button>
+      <div class="fb" id="tpFb"><div class="verdict" id="tpVd"></div><div class="fact" id="tpFact"></div></div>
+      <div class="row"><button class="btn green" id="tpNext">Дальше ➜</button></div>
+      <div class="row"><button class="btn ghost" id="tpRestart">🔄 Новый тренировочный набор (10 заданий)</button></div>
+    </aside>
+  </div>
+</section>
+
+<!-- ================= ПРОФИЛЬ ================= -->
+<section class="screen" id="sc-profile">
+  <div class="work">
+    <div>
+      <div class="mapWrap">
+        <canvas id="profCv" width="900" height="900"></canvas>
+        <div class="tools">
+          <button class="tool on" id="pfGrid">📐 Километровая сетка</button>
+          <button class="tool" id="pfEraser">🧽 Сбросить точки</button>
+          <button class="tool" id="pfNew">🎲 Новая линия</button>
+        </div>
+      </div>
+      <div class="mapWrap" style="margin-top:14px">
+        <canvas id="graphCv" width="900" height="360" style="background:#fff"></canvas>
+        <div class="tools"><span class="cap" style="padding:2px 4px">Веди точки мышью/пальцем по вертикали: совпади с истинной высотой участка. Ось Y — высота (м), ось X — расстояние от пункта А.</span></div>
+      </div>
+    </div>
+    <aside class="panel">
+      <div class="pHead"><span class="badge">Профиль (вертикальный срез)</span><span class="cnt" id="ppCnt"></span></div>
+      <div class="prog" id="ppProg"><i></i><i></i><i></i></div>
+      <div class="q" id="ppQ">…</div>
+      <div class="sub" id="ppSub"></div>
+      <div id="ppIn"></div>
+      <button class="btn full" id="ppCheck">Проверить профиль</button>
+      <div class="fb" id="ppFb"><div class="verdict" id="ppVd"></div><div class="fact" id="ppFact"></div></div>
+      <div class="row"><button class="btn green" id="ppNext">Дальше ➜</button></div>
+      <div class="row"><button class="btn ghost" id="ppTheory">📖 Как строить профиль</button></div>
+    </aside>
+  </div>
+</section>
+
+<!-- ================= КОНТУРНАЯ КАРТА ================= -->
+<section class="screen" id="sc-world">
+  <div class="work">
+    <div>
+      <div class="mapWrap">
+        <canvas id="worldCv" width="980" height="500"></canvas>
+        <div class="tools">
+          <button class="tool on" id="wbWorld">🌍 Мир (материки и океаны)</button>
+          <button class="tool" id="wbBel">🇧🇾 Беларусь</button>
+          <button class="tool" id="wbGrid">📐 Сетка широт и долгот</button>
+          <button class="tool" id="wbShowAns">👀 Показать ответ</button>
+        </div>
+      </div>
+      <div class="cap" id="worldCap">Кликните по карте, чтобы ответить. Сетка — через 10°.</div>
+    </div>
+    <aside class="panel">
+      <div class="pHead"><span class="badge" id="wpTag">Контурная карта</span><span class="cnt" id="wpCnt"></span></div>
+      <div class="prog" id="wpProg"></div>
+      <div class="q" id="wpQ">…</div>
+      <div id="wpIn"></div>
+      <button class="btn full" id="wpCheck">Проверить</button>
+      <div class="fb" id="wpFb"><div class="verdict" id="wpVd"></div><div class="fact" id="wpFact"></div></div>
+      <div class="row"><button class="btn green" id="wpNext">Дальше ➜</button></div>
+      <div class="row"><button class="btn ghost" id="wpRestart">🔄 Новый набор</button></div>
+    </aside>
+  </div>
+</section>
+
+<!-- ================= ДИКТАНТ ================= -->
+<section class="screen" id="sc-dict">
+  <div class="dictWrap">
+    <div class="panel" style="position:static;max-width:820px;margin:0 auto">
+      <div class="pHead"><span class="badge">Задание 4 · Географический диктант</span>
+        <span class="cnt" id="dcCnt">30 ответов · 10 баллов</span></div>
+      <div class="dots" id="dcDots"></div>
+      <div class="q" id="dcQ">…</div>
+      <div class="fields"><div class="fld"><label>Ответ (буквы или цифры)</label>
+        <input id="dcIn" class="big" autocomplete="off" placeholder="введите ответ"/></div></div>
+      <button class="btn full" id="dcCheck">Ответить (Enter)</button>
+      <div class="fb" id="dcFb"><div class="verdict" id="dcVd"></div><div class="fact" id="dcFact"></div></div>
+      <div class="row"><button class="btn green" id="dcNext">Следующий ➜</button></div>
+      <div class="row"><button class="btn ghost" id="dcRestart">🔄 Начать диктант заново</button></div>
+      <div class="cap">Правило ЦТ: ответ записывается полностью, без сокращений, заглавные буквы не обязательны.
+        Каждый верный ответ = 1/3 балла, 30 верных = 10 баллов.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= ВАРИАНТ ================= -->
+<section class="screen" id="sc-variant">
+  <div class="work">
+    <div>
+      <div class="mapWrap" id="varMapWrap">
+        <canvas id="varCv" width="900" height="900"></canvas>
+        <div class="tools"><span class="cap" style="padding:2px 4px" id="varCap">Вариант ЦТ: 100 баллов, 5 заданий.</span></div>
+      </div>
+      <div class="hCard" style="margin-top:14px;padding:16px 20px">
+        <h3>Структура пробного варианта</h3>
+        <table class="ct">
+          <tr><th>Задание</th><th>Что проверяем</th><th>Баллы</th></tr>
+          <tr><td>1. Контурная карта мира</td><td>координаты, материки и океаны, объекты</td><td>10</td></tr>
+          <tr><td>2. Топографическая карта 1:25 000</td><td>координаты, азимут, расстояние, высоты, привязка</td><td>20</td></tr>
+          <tr><td>3. Контурная карта Беларуси</td><td>города, реки, области, рельеф</td><td>10</td></tr>
+          <tr><td>4. Географический диктант</td><td>30 кратких ответов</td><td>10</td></tr>
+          <tr><td>5. Тест</td><td>общая география, материки, страны, Беларусь</td><td>50</td></tr>
+        </table>
+        <div class="cap">Время не ограничено — тренируйтесь без спешки, а на реальном ЦТ следите за таймером.</div>
+      </div>
+    </div>
+    <aside class="panel">
+      <div class="pHead"><span class="badge" id="vTag">Вариант</span><span class="cnt" id="vCnt"></span></div>
+      <div class="prog" id="vProg"></div>
+      <div class="q" id="vQ">Нажмите «Начать вариант», чтобы собрать задания.</div>
+      <div id="vIn"></div>
+      <button class="btn full" id="vCheck">Проверить</button>
+      <div class="fb" id="vFb"><div class="verdict" id="vVd"></div><div class="fact" id="vFact"></div></div>
+      <div class="row"><button class="btn green" id="vNext">Дальше ➜</button></div>
+      <div class="row"><button class="btn" id="vStart">🧪 Начать вариант</button></div>
+      <div class="row"><button class="btn ghost" id="vAbort">✖ Сбросить вариант</button></div>
+    </aside>
+  </div>
+</section>
+
+<!-- ================= СПРАВКА ================= -->
+<section class="screen" id="sc-help">
+  <div class="help">
+    <div class="hCard">
+      <h3>🎯 Формат ЦТ по географии (Республика Беларусь)</h3>
+      <p>Работа состоит из <b>пяти заданий на 100 баллов</b>. Этот конструктор повторяет логику каждого из них,
+      но вопросы и карты здесь генерируются заново — вы тренируете навык, а не запоминание ответов.</p>
+      <table class="ct">
+        <tr><th>Задание</th><th>Содержание</th><th>Баллы</th></tr>
+        <tr><td>1</td><td>Работа с контурной картой мира: координаты, материки и океаны, объекты</td><td>10</td></tr>
+        <tr><td>2</td><td>Работа с топографической картой масштаба 1:25 000: координаты квадрата, азимут, расстояние, высоты, привязка объектов</td><td>20</td></tr>
+        <tr><td>3</td><td>Работа с контурной картой Беларуси: области, города, реки, рельеф</td><td>10</td></tr>
+        <tr><td>4</td><td>Географический диктант: 30 ответов</td><td>10</td></tr>
+        <tr><td>5</td><td>Тест: общая география, материки и океаны, страны и народы, география Беларуси</td><td>50</td></tr>
+      </table>
+      <p class="cap">Проверьте актуальную структуру и кодификатор в официальных материалах Национального центра
+      аттестации и тестирования — формат может уточняться под новый учебный год.</p>
+    </div>
+
+    <div class="hCard">
+      <h3>📐 Масштаб и расстояния</h3>
+      <div class="formula">Масштаб 1:25 000 → 1 см на карте = 250 м = 0,25 км</div>
+      <ul>
+        <li>Длину в сантиметрах умножаем на <b>25 000</b> — получаем метры: <i>8 см → 8 × 25 000 = 200 000 см = 2000 м</i></li>
+        <li>Километровая сетка: сторона квадрата = <b>1 км = 1000 м</b>. На глаз откладывайте доли клетки.</li>
+        <li>Обратная задача: <i>1500 м → 1500 : 250 = 6 см</i> на карте.</li>
+      </ul>
+      <div class="formula">Расстояние (м) = длина отрезка на карте (см) × 250</div>
+    </div>
+
+    <div class="hCard">
+      <h3>🧭 Азимут</h3>
+      <p><b>Азимут</b> — угол от направления на север (по часовой стрелке) до направления на объект, 0°–360°.</p>
+      <ul>
+        <li>Север = 0° (или 360°), восток = 90°, юг = 180°, запад = 270°.</li>
+        <li>Обратный азимут = прямой ± 180°.</li>
+        <li>Разница между двумя азимутами не может превышать 180°.</li>
+      </ul>
+      <div class="formula">tg α = ΔY / ΔX (в километровой сетке: ΔX — восточное смещение, ΔY — северное)</div>
+    </div>
+
+    <div class="hCard">
+      <h3>⛰️ Горизонтали (изогипсы)</h3>
+      <ul>
+        <li><b>Горизонталь</b> — линия, соединяющая точки с одинаковой высотой.</li>
+        <li><b>Контурное расстояние</b> карты 1:25 000 — обычно <b>1 м</b> (в учебных вариантах бывает 2 м).</li>
+        <li><b>Усиленные (индексные)</b> горизонтали — каждая пятая, они толще и подписаны числом.</li>
+        <li>Всего между двумя усиленными горизонталями = 5 контуров.</li>
+        <li>Точка между горизонталями: высота ≈ значение нижней горизонтали + (доля расстояния × контурное расстояние).</li>
+        <li>Чем ближе горизонтали друг к другу — тем круче склон; слияние горизонталей = обрыв или ущелье.</li>
+        <li>Впадина/болото: горизонтали с штрихами внутрь; гора — замкнутые окружности одна в другой.</li>
+      </ul>
+      <div class="formula">Высота точки = H(нижней) + (n / N) × i, где i — контурное расстояние</div>
+    </div>
+
+    <div class="hCard">
+      <h3>🗺️ Координаты квадрата на топокарте</h3>
+      <p>Координатная (километровая) сетка делит карту на квадраты 1 × 1 км. У каждой линии — двузначный номер.</p>
+      <ul>
+        <li><b>Четырёхзначный номер квадрата</b> = номер нижней горизонтальной линии (X, северная) + номер левой вертикальной линии (Y, восточная). Например: линия X=62 (снизу), линия Y=47 (слева) → <b>6247</b>.</li>
+        <li>Чтобы найти координаты точки: смотрим, между какими линиями она лежит — берём меньшие номера.</li>
+        <li>Если просят «условные координаты» — номера берутся от начала отсчёта карты, заданного на бланке.</li>
+      </ul>
+    </div>
+
+    <div class="hCard">
+      <h3>📈 Профиль местности (вертикальный срез)</h3>
+      <ul>
+        <li>Проводим линию А → Б, отмечаем точки пересечения с горизонталями.</li>
+        <li>Ось X — расстояние (в см или км), ось Y — высота (в м, масштаб по вертикали обычно крупнее).</li>
+        <li>Чем чаще сечение горизонталями — тем плавнее подъём; слияние линий → обрыв (на профиле — вертикальный участок).</li>
+        <li>Заполняем площадь сечения (штриховка до линии базиса), подписываем высоты точек А и Б.</li>
+      </ul>
+      <div class="formula">Перепад высот (превышение) = H(Б) − H(А)</div>
+    </div>
+
+    <div class="hCard">
+      <h3>✍️ Географический диктант — 30 ответов</h3>
+      <p>Ответ записывают полностью: «17,1», «Канберра», «Балтийское». Цифры и названия проверяют без скидок,
+      поэтому тренируйте точность написания. В этом конструкторе ответы принимаются без учёта регистра и «ё/е».</p>
+    </div>
+
+    <div class="hCard">
+      <h3>🧭 С чего начать</h3>
+      <ul>
+        <li>1️⃣ <b>Топокарта</b> — 10 заданий на координаты, азимут, расстояние, высоты и привязку.</li>
+        <li>2️⃣ <b>Профиль</b> — постройте срез по горизонталям и ответьте на вопросы.</li>
+        <li>3️⃣ <b>Контурная карта</b> — кликните объект на карте мира или Беларуси, либо впишите координаты.</li>
+        <li>4️⃣ <b>Диктант</b> — 30 коротких ответов на 10 баллов.</li>
+        <li>5️⃣ <b>Вариант ЦТ</b> — полный прогон на 100 баллов, результат сохраняется.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<div id="modal" class="hidden"><div class="card" id="modalCard"></div></div>
+<div id="loadErr"><div>🧭<br><b>Не удалось загрузить страницу</b><br><br>Обновите страницу (F5).</div></div>
+
+<script>
+/* =====================================================================
+   КАРТОГРАФИЧЕСКИЙ КОНСТРУКТОР — подготовка к ЦТ по географии 2026–2027
+   ===================================================================== */
+"use strict";
+
+/* ================= ОБЩИЕ УТИЛИТЫ ================= */
+function $(id){return document.getElementById(id);}
+function clamp(v,a,b){return v<a?a:(v>b?b:v);}
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;var t=Math.imul(a^a>>>15,1|a);
+  t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+function rint(rnd,a,b){return a+Math.floor(rnd()*(b-a+1));}
+function pick(rnd,arr){return arr[Math.floor(rnd()*arr.length)];}
+function distSeg(px,py,x1,y1,x2,y2){var dx=x2-x1,dy=y2-y1,l2=dx*dx+dy*dy,t=l2?((px-x1)*dx+(py-y1)*dy)/l2:0;
+  t=clamp(t,0,1);var qx=x1+t*dx,qy=y1+t*dy;return Math.hypot(px-qx,py-qy);}
+function normNum(v,d){return String(Math.round(v*Math.pow(10,d))/Math.pow(10,d));}
+
+/* прогресс/очки — сохраняются в localStorage */
+var KEY='kartograf_ct_26';
+var ST=(function(){try{return Object.assign({score:0,bestVar:0,bestTopo:0,bestDict:0},
+  JSON.parse(localStorage.getItem(KEY)||'{}'));}catch(e){return{score:0,bestVar:0,bestTopo:0,bestDict:0};}})();
+function saveST(){try{localStorage.setItem(KEY,JSON.stringify(ST));}catch(e){}}
+function addScore(n){ST.score+=Math.max(0,Math.round(n));saveST();refreshHud();}
+function refreshHud(){$('totalScore').textContent=ST.score;
+  $('bestVar').textContent=ST.bestVar?ST.bestVar+'/100':'—';}
+
+/* ================= ТОПОКАРТА: РЕЛЬЕФ ================= */
+var MAPM=5000;              /* лист 5 × 5 км */
+var GRID=160, STEP=MAPM/GRID;/* шаг сетки высот 31,25 м */
+var PW=900, PPM=MAPM/PW;     /* 900 px карты, метров в пикселе */
+
+function buildTopoMap(seed){
+  var rnd=mulberry32(seed>>>0), i,j,k;
+  var bumps=[];
+  for(i=0;i<12;i++) bumps.push({x:rnd()*MAPM,y:rnd()*MAPM,a:(rnd()*2-1)*19,s:600+rnd()*1250});
+
+  /* река: меандр через весь лист */
+  var ry=1500+rnd()*2400, ph=rnd()*6.28, am=260+rnd()*430, river=[];
+  for(i=0;i<=60;i++){var t=i/60;
+    river.push([t*MAPM, clamp(ry+Math.sin(ph+t*6.6)*am+Math.sin(ph*2+t*13)*80,700,MAPM-700)]);}
+
+  /* озеро в пойме */
+  var lk=river[rint(rnd,5,14)];
+  var lake={x:clamp(lk[0],500,MAPM-500),y:clamp(lk[1]+(rnd()<.5?-1:1)*(300+rnd()*280),500,MAPM-500),
+            rx:170+rnd()*110,ry:140+rnd()*80};
+  bumps.push({x:lake.x,y:lake.y,a:-24,s:165});
+
+  function baseH(x,y){var h=174;for(var b=0;b<bumps.length;b++){var p=bumps[b],dx=x-p.x,dy=y-p.y;
+    h+=p.a*Math.exp(-(dx*dx+dy*dy)/(2*p.s*p.s));}return h;}
+  function dRiver(x,y){var m=1e9;for(var s=0;s<river.length-1;s++){
+    var d=distSeg(x,y,river[s][0],river[s][1],river[s+1][0],river[s+1][1]);if(d<m)m=d;}return m;}
+
+  /* сетка высот */
+  var gh=[], hmin=1e9, hmax=-1e9;
+  for(j=0;j<=GRID;j++){var row=[],y=j*STEP;
+    for(i=0;i<=GRID;i++){var x=i*STEP, h=baseH(x,y), dm=dRiver(x,y);
+      h-=26*Math.exp(-(dm*dm)/(2*300*300));
+      row.push(h); if(h<hmin)hmin=h; if(h>hmax)hmax=h;}
+    gh.push(row);}
+
+  /* билинейная выборка высоты */
+  function H(x,y){x=clamp(x,0,MAPM);y=clamp(y,0,MAPM);
+    var fx=x/STEP,fy=y/STEP,ii=Math.floor(fx),jj=Math.floor(fy);
+    if(ii>=GRID)ii=GRID-1; if(jj>=GRID)jj=GRID-1;
+    var tx=fx-ii,ty=fy-jj,a=gh[jj][ii],b=gh[jj][ii+1],c=gh[jj+1][ii],d=gh[jj+1][ii+1];
+    return (a*(1-tx)+b*tx)*(1-ty)+(c*(1-tx)+d*tx)*ty;}
+
+  var range=hmax-hmin;
+  var interval=range>46?2:1;
+
+  /* ---- горизонтали: marching squares ---- */
+  function segments(level){
+    var segs=[];
+    for(var jj=0;jj<GRID;jj++)for(var ii=0;ii<GRID;ii++){
+      var a=gh[jj][ii],b=gh[jj][ii+1],c=gh[jj+1][ii+1],d=gh[jj+1][ii],m=0;
+      if(a>level)m|=8; if(b>level)m|=4; if(c>level)m|=2; if(d>level)m|=1;
+      if(m===0||m===15)continue;
+      var top=[ii+(level-a)/(b-a), jj], right=[ii+1, jj+(level-b)/(c-b)],
+          bot=[ii+(level-d)/(c-d), jj+1], left=[ii, jj+(level-a)/(d-a)];
+      var push=function(p,q){segs.push([p[0],p[1],q[0],q[1]]);};
+      switch(m){
+        case 1: case 14: push(left,bot); break;
+        case 2: case 13: push(bot,right); break;
+        case 3: case 12: push(left,right); break;
+        case 4: case 11: push(top,right); break;
+        case 6: case 9:  push(top,bot); break;
+        case 7:  push(left,top); push(bot,right); break;
+        case 8: case 7-1: /* 8 */ push(left,top); break;
+        case 10: {var ctr=(a+b+c+d)/4;
+          if(ctr>level){push(top,right);push(left,bot);}else{push(left,top);push(bot,right);}break;}
+        case 5: {var ctr2=(a+b+c+d)/4;
+          if(ctr2>level){push(left,top);push(bot,right);}else{push(left,bot);push(top,right);}break;}
+        default: break;
+      }
+      if(m===8)push(left,top);
+    }
+    return segs;
+  }
+  function key(x,y){return Math.round(x*10000)+'_'+Math.round(y*10000);}
+  function chain(segs){
+    var at=new Map();
+    function push2(k,ix){var arr=at.get(k);if(!arr){arr=[];at.set(k,arr);}arr.push(ix);}
+    segs.forEach(function(s,ix){push2(key(s[0],s[1]),ix);push2(key(s[2],s[3]),ix);});
+    var used=new Uint8Array(segs.length), lines=[];
+    function nextFrom(p){var arr=at.get(key(p[0],p[1]))||[];
+      for(var q=0;q<arr.length;q++)if(!used[arr[q]])return arr[q];return -1;}
+    for(var ix=0;ix<segs.length;ix++){
+      if(used[ix])continue; used[ix]=1;
+      var s=segs[ix], pts=[[s[0],s[1]],[s[2],s[3]]], guard;
+      for(guard=0;guard<20000;guard++){
+        var nx=nextFrom(pts[pts.length-1]); if(nx<0)break; used[nx]=1;
+        var t=segs[nx], last=pts[pts.length-1];
+        var A=[t[0],t[1]],B=[t[2],t[3]];
+        var other=(Math.abs(A[0]-last[0])<1e-7&&Math.abs(A[1]-last[1])<1e-7)?B:A;
+        pts.push(other);
+      }
+      for(guard=0;guard<20000;guard++){
+        var nv=nextFrom(pts[0]); if(nv<0)break; used[nv]=1;
+        var t2=segs[nv], first=pts[0], A2=[t2[0],t2[1]], B2=[t2[2],t2[3]];
+        var other2=(Math.abs(A2[0]-first[0])<1e-7&&Math.abs(A2[1]-first[1])<1e-7)?B2:A2;
+        pts.unshift(other2);
+      }
+      lines.push(pts);
+    }
+    return lines;
+  }
+  var contours=[];
+  var lv0=Math.ceil(hmin/interval)*interval, lv1=Math.floor(hmax/interval)*interval;
+  for(var lv=lv0;lv<=lv1;lv+=interval){
+    var ls=chain(segments(lv));
+    for(var n=0;n<ls.length;n++){
+      var pl=ls[n]; if(pl.length<3)continue;
+      var pts=pl.map(function(p){return [p[0]*STEP,p[1]*STEP];});
+      contours.push({lv:lv,pts:pts});
+    }
+  }
+
+  /* ---- дороги, объекты ---- */
+  var ci=rint(rnd,16,44), cross=river[ci];
+  var t0=river[ci-1], t1=river[ci+1];
+  var tx=t1[0]-t0[0], ty=t1[1]-t0[1], tl=Math.hypot(tx,ty)||1; tx/=tl; ty/=tl;
+  var perp=[-ty,tx], bend=rnd()*6.28;
+  function edgeAlong(from,dir){var x=from[0],y=from[1];
+    for(var s=0;s<400;s++){x+=dir[0]*80;y+=dir[1]*80;
+      if(x<0||y<0||x>MAPM||y>MAPM)return [clamp(x,0,MAPM),clamp(y,0,MAPM)];}
+    return [x,y];}
+  function half(dir){
+    var end=edgeAlong(cross,dir), L=Math.hypot(end[0]-cross[0],end[1]-cross[1]),
+        n=Math.max(3,Math.round(L/650)), pts=[],
+        amp=Math.min(330,L*0.22);
+    for(var ii2=n;ii2>=0;ii2--){
+      var tt=ii2/n, xx=cross[0]+(end[0]-cross[0])*tt, yy=cross[1]+(end[1]-cross[1])*tt;
+      var off=Math.sin(tt*Math.PI)*amp*Math.sin(bend);
+      pts.push([clamp(xx-dir[1]*off,0,MAPM), clamp(yy+dir[0]*off,0,MAPM)]);
+    }
+    return pts;}
+  var roadA=half([-perp[0],-perp[1]]), roadB=half(perp).slice().reverse();
+  var road=roadA.concat(roadB.slice(1));
+
+  var roadDirIdx=roadA.length-3;
+  if(roadDirIdx<1)roadDirIdx=1;
+  var villageAt=roadA[roadDirIdx];
+  var vdx=villageAt[0]-cross[0], vdy=villageAt[1]-cross[1], vl=Math.hypot(vdx,vdy)||1;
+  vdx/=vl; vdy/=vl;
+
+  var vname=pick(rnd,['Лужки','Заречье','Дуброва','Ольховка','Берёзовка','Крутовка']);
+  var village={x:villageAt[0],y:villageAt[1],name:vname,buildings:[]};
+  var nB=rint(rnd,11,17);
+  for(i=0;i<nB;i++){
+    var along=(rnd()-0.5)*700, side=(rnd()<.5?-1:1)*(35+rnd()*80);
+    var bx=village.x+vdx*along-perp[0]*side, by=village.y+vdy*along-perp[1]*side;
+    if(bx<60||by<60||bx>MAPM-60||by>MAPM-60)continue;
+    /* размеры в метрах: дом ~15–30 м, рисуются через pxm */
+    village.buildings.push({x:bx,y:by,w:15+rnd()*14,h:9+rnd()*6,a:Math.atan2(vdy,vdx)});
+  }
+
+  function flatSpot(minFromVillage,minFromRiver){
+    for(var q=0;q<400;q++){
+      var x=450+rnd()*(MAPM-900), y=450+rnd()*(MAPM-900);
+      if(Math.hypot(x-village.x,y-village.y)<minFromVillage)continue;
+      if(Math.hypot(x-lake.x,y-lake.y)<Math.max(lake.rx,lake.ry)+250)continue;
+      if(dRiver(x,y)<minFromRiver)continue;
+      var g=Math.max(Math.abs(H(x+50,y)-H(x-50,y)),Math.abs(H(x,y+50)-H(x,y-50)));
+      if(g>7)continue;
+      return [x,y];
+    }
+    return [village.x+900,village.y+900];
+  }
+  var farmP=flatSpot(1300,500), wellP=[village.x+vdx*260-perp[0]*160, village.y+vdy*260-perp[1]*160];
+
+  /* мельница — на берегу реки */
+  var mi=rint(rnd,6,54), mr=river[mi];
+  var mg=Math.atan2(river[mi+1][1]-river[mi-1][1], river[mi+1][0]-river[mi-1][0]);
+  var millP=[mr[0]-Math.sin(mg)*70, mr[1]+Math.cos(mg)*70];
+
+  /* болото — в низине у реки */
+  var mi2=rint(rnd,10,50), mr2=river[mi2];
+  var mg2=Math.atan2(river[mi2+1][1]-river[mi2-1][1], river[mi2+1][0]-river[mi2-1][0]);
+  var marsh={x:clamp(mr2[0]-Math.sin(mg2)*(420+rnd()*220),600,MAPM-600),
+             y:clamp(mr2[1]+Math.cos(mg2)*(420+rnd()*220),600,MAPM-600),
+             rx:300+rnd()*180,ry:200+rnd()*120,
+             name:pick(rnd,['Болото Верхнее','Болото Осиновое','Болото Долгое'])};
+
+  /* пункт триангуляции — на вершине */
+  var best=null,bh=-1e9;
+  for(j=2;j<GRID-2;j+=3)for(i=2;i<GRID-2;i+=3){
+    var hh=gh[j][i]; if(hh>bh){bh=hh;best=[i*STEP,j*STEP];}
+  }
+  if(best[0]<600)best[0]=600; if(best[0]>MAPM-600)best[0]=MAPM-600;
+  if(best[1]<600)best[1]=600; if(best[1]>MAPM-600)best[1]=MAPM-600;
+  bh=gh[clamp(Math.round(best[1]/STEP),0,GRID-1)][clamp(Math.round(best[0]/STEP),0,GRID-1)];
+  var trig={x:best[0],y:best[1],h:bh};
+  /* вторая именованная возвышенность */
+  var best2=null,bh2=-1e9;
+  for(j=2;j<GRID-2;j+=3)for(i=2;i<GRID-2;i+=3){
+    var p2=[i*STEP,j*STEP];
+    if(Math.hypot(p2[0]-trig.x,p2[1]-trig.y)<2000)continue;
+    if(p2[0]<700||p2[0]>MAPM-700||p2[1]<700||p2[1]>MAPM-700)continue;
+    if(gh[j][i]>bh2){bh2=gh[j][i];best2=p2;}
+  }
+  if(!best2){best2=[MAPM*0.35,MAPM*0.35];bh2=gh[Math.round(best2[1]/STEP)][Math.round(best2[0]/STEP)];}
+  var hill2={x:best2[0],y:best2[1],h:bh2,name:pick(rnd,['Возвышенность Лесная','Гора Круглая','Возвышенность Сухая'])};
+
+  /* леса и кустарник */
+  var forest=[];
+  for(i=0;i<6;i++){
+    var fp=flatSpot(600,260);
+    forest.push({x:fp[0],y:fp[1],r:420+rnd()*430,conif:rnd()<.45});
+  }
+  /* тропа: деревня → ферма */
+  var trail=[[village.x,village.y],[(village.x+farmP[0])/2+(rnd()-.5)*300,(village.y+farmP[1])/2+(rnd()-.5)*300],[farmP[0],farmP[1]]];
+
+  var objs=[
+    {k:'bridge',name:'мост',      x:cross[0],y:cross[1]},
+    {k:'village',name:'деревня '+vname,x:village.x,y:village.y},
+    {k:'farm',  name:'ферма',     x:farmP[0],y:farmP[1]},
+    {k:'mill',  name:'мельница',  x:millP[0],y:millP[1]},
+    {k:'well',  name:'колодец',   x:wellP[0],y:wellP[1]},
+    {k:'marsh', name:marsh.name,  x:marsh.x,y:marsh.y},
+    {k:'trig',  name:'пункт триангуляции',x:trig.x,y:trig.y},
+    {k:'hill',  name:hill2.name,  x:hill2.x,y:hill2.y}
+  ];
+
+  var map={
+    seed:seed, gh:gh, H:H, hmin:hmin, hmax:hmax, interval:interval, contours:contours,
+    river:river, lake:lake, road:road, roadA:roadA, roadB:roadB, cross:cross,
+    village:village, farm:farmP, mill:millP, well:wellP, marsh:marsh, trig:trig,
+    hill2:hill2, forest:forest, trail:trail, objs:objs,
+    N0:rint(rnd,58,66), E0:rint(rnd,43,49),
+    pxm:PW/MAPM
+  };
+  /* номер квадрата: X (нижняя горизонтальная линия) + Y (левая вертикальная) */
+  map.sqCode=function(x,y){
+    var cx=clamp(Math.floor(x/1000),0,4), cy=clamp(Math.floor(y/1000),0,4);
+    return String(map.N0+cy)+String(map.E0+cx);
+  };
+  map.sqAtPx=function(px,py){return map.sqCode(px*map.pxm,(MAPM-py)*map.pxm);};
+  map.toPx=function(x,y){return [x*map.pxm, (MAPM-y)*map.pxm];};
+  map.dRiver=dRiver;
+  return map;
+}
+
+var TOPOMAP=null;
+function newTopoMap(seed){
+  TOPOMAP=buildTopoMap(seed===undefined?(1+Math.floor(Math.random()*1e9)):seed);
+  return TOPOMAP;
+}
+/* ================= ОТРИСОВКА ЛИСТА 1:25 000 ================= */
+var C_PAPER='#f7f2e6', C_CONT='#a2703f', C_CONTIDX='#8a5227', C_WATER='#4fa3d6',
+    C_WATER2='#8fcdf0', C_ROAD='#b4642f', C_ROADD='#f2d6a8', C_FOREST='#bfe0ad',
+    C_TREE='#3d8a44', C_MARSH='#cfe8f5', C_GRID='#7b5ea7', C_INK='#2a2118';
+
+function haloText(ctx,txt,x,y,font,col,align,baseline){
+  ctx.save(); ctx.font=font; ctx.textAlign=align||'center'; ctx.textBaseline=baseline||'middle';
+  ctx.lineJoin='round'; ctx.strokeStyle='rgba(255,255,255,.95)'; ctx.lineWidth=3.5;
+  ctx.strokeText(txt,x,y); ctx.fillStyle=col||C_INK; ctx.fillText(txt,x,y); ctx.restore();
+}
+function ellipsePath(ctx,cx,cy,rx,ry,rot){
+  ctx.beginPath(); ctx.ellipse(cx,cy,rx,ry,rot||0,0,Math.PI*2); ctx.closePath();
+}
+function renderTopoBase(map){
+  var cv=document.createElement('canvas'); cv.width=PW; cv.height=PW;
+  var ctx=cv.getContext('2d'), i,j,p;
+  var P=function(x,y){return [x*map.pxm,(MAPM-y)*map.pxm];};
+
+  ctx.fillStyle=C_PAPER; ctx.fillRect(0,0,PW,PW);
+
+  /* ---- леса ---- */
+  map.forest.forEach(function(f){
+    var c=P(f.x,f.y), r=f.r*map.pxm;
+    ellipsePath(ctx,c[0],c[1],r,r*0.82,0.3);
+    ctx.fillStyle=C_FOREST; ctx.globalAlpha=.75; ctx.fill(); ctx.globalAlpha=1;
+    var stepS=26;
+    for(var yy=Math.floor(c[1]-r);yy<=c[1]+r;yy+=stepS){
+      for(var xx=Math.floor(c[0]-r);xx<=c[0]+r;xx+=stepS){
+        var dx=xx-c[0],dy=(yy-c[1])/0.82, rr=Math.hypot(dx,dy);
+        var lim=r*(0.8+0.2*Math.sin(Math.atan2(dy,dx)*3));
+        if(rr>lim)continue;
+        ctx.strokeStyle=C_TREE; ctx.lineWidth=1.2; ctx.fillStyle=C_TREE;
+        if(f.conif){
+          ctx.beginPath(); ctx.moveTo(xx,yy-5); ctx.lineTo(xx-3.5,yy+3);
+          ctx.lineTo(xx+3.5,yy+3); ctx.closePath(); ctx.stroke();
+        }else{
+          ctx.beginPath(); ctx.arc(xx,yy-1.5,3.4,0,Math.PI*2); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(xx,yy+2); ctx.lineTo(xx,yy+5); ctx.stroke();
+        }
+      }
+    }
+  });
+
+  /* ---- болото ---- */
+  (function(){
+    var c=P(map.marsh.x,map.marsh.y), rx=map.marsh.rx*map.pxm, ry=map.marsh.ry*map.pxm;
+    ellipsePath(ctx,c[0],c[1],rx,ry,0); ctx.fillStyle=C_MARSH; ctx.fill();
+    ctx.save(); ctx.beginPath(); ctx.ellipse(c[0],c[1],rx,ry,0,0,Math.PI*2); ctx.clip();
+    ctx.strokeStyle='#3f8fc0'; ctx.lineWidth=1.6;
+    for(var yy=c[1]-ry;yy<=c[1]+ry;yy+=15){
+      for(var xx=c[0]-rx;xx<=c[0]+rx;xx+=26){
+        ctx.beginPath(); ctx.moveTo(xx,yy); ctx.lineTo(xx+11,yy); ctx.stroke();
+        if(((xx+yy)/3|0)%3===0){ctx.beginPath();ctx.moveTo(xx+14,yy);ctx.lineTo(xx+25,yy);ctx.stroke();}
+      }
+    }
+    ctx.restore();
+  })();
+
+  /* ---- горизонтали ---- */
+  var stepL=5*map.interval;
+  map.contours.forEach(function(c){
+    var idx=(c.lv%stepL===0);
+    ctx.beginPath();
+    for(i=0;i<c.pts.length;i++){p=P(c.pts[i][0],c.pts[i][1]); if(i===0)ctx.moveTo(p[0],p[1]); else ctx.lineTo(p[0],p[1]);}
+    ctx.strokeStyle=idx?C_CONTIDX:C_CONT; ctx.lineWidth=idx?2:1; ctx.lineJoin='round'; ctx.stroke();
+  });
+  /* подписи высот на усиленных горизонталях */
+  var byLv={};
+  map.contours.forEach(function(c){ if(c.lv%stepL!==0)return;
+    var arr=byLv[c.lv]||(byLv[c.lv]=[]); arr.push(c);});
+  Object.keys(byLv).forEach(function(lvk){
+    var list=byLv[lvk].slice().sort(function(a,b){return b.pts.length-a.pts.length;}).slice(0,3);
+    list.forEach(function(c){
+      var n=c.pts.length, total=0;
+      for(i=1;i<n;i++)total+=Math.hypot(c.pts[i][0]-c.pts[i-1][0],c.pts[i][1]-c.pts[i-1][1]);
+      var targets=total>700?[0.28,0.72]:(total>260?[0.5]:[]);
+      var want=0, acc=0;
+      for(i=1;i<n;i++){
+        var seg=Math.hypot(c.pts[i][0]-c.pts[i-1][0],c.pts[i][1]-c.pts[i-1][1]);
+        if(want<targets.length && acc+seg/2>=total*targets[want]){
+          var a=P(c.pts[i-1][0],c.pts[i-1][1]), b=P(c.pts[i][0],c.pts[i][1]);
+          var ang=Math.atan2(b[1]-a[1],b[0]-a[0])*180/Math.PI;
+          if(ang>90)ang-=180; if(ang<-90)ang+=180;
+          ctx.save(); ctx.translate(a[0],a[1]); ctx.rotate(ang*Math.PI/180);
+          haloText(ctx,String(lvk),0,0,'700 11px "Segoe UI",sans-serif','#6b3d16','center','middle');
+          ctx.restore(); want++;
+        }
+        acc+=seg;
+        if(want>=targets.length)break;
+      }
+    });
+  });
+
+  /* ---- вода ---- */
+  (function(){
+    var c=P(map.lake.x,map.lake.y);
+    ellipsePath(ctx,c[0],c[1],map.lake.rx*map.pxm,map.lake.ry*map.pxm,0);
+    ctx.fillStyle=C_WATER2; ctx.fill(); ctx.strokeStyle='#2f7fb5'; ctx.lineWidth=1.6; ctx.stroke();
+  })();
+  ctx.beginPath();
+  for(i=0;i<map.river.length;i++){p=P(map.river[i][0],map.river[i][1]); if(i===0)ctx.moveTo(p[0],p[1]); else ctx.lineTo(p[0],p[1]);}
+  ctx.strokeStyle=C_WATER; ctx.lineWidth=5.5; ctx.lineJoin='round'; ctx.lineCap='round'; ctx.stroke();
+
+  /* ---- дороги ---- */
+  ctx.beginPath();
+  for(i=0;i<map.road.length;i++){p=P(map.road[i][0],map.road[i][1]); if(i===0)ctx.moveTo(p[0],p[1]); else ctx.lineTo(p[0],p[1]);}
+  ctx.strokeStyle=C_ROAD; ctx.lineWidth=7; ctx.lineJoin='round'; ctx.stroke();
+  ctx.strokeStyle=C_ROADD; ctx.lineWidth=3.6; ctx.stroke();
+  /* тропа */
+  ctx.beginPath();
+  for(i=0;i<map.trail.length;i++){p=P(map.trail[i][0],map.trail[i][1]); if(i===0)ctx.moveTo(p[0],p[1]); else ctx.lineTo(p[0],p[1]);}
+  ctx.setLineDash([7,6]); ctx.strokeStyle='#8a6b45'; ctx.lineWidth=2; ctx.stroke(); ctx.setLineDash([]);
+
+  /* ---- строения ---- */
+  map.village.buildings.forEach(function(b){
+    var c=P(b.x,b.y);
+    var bw=Math.max(4,b.w*map.pxm), bh=Math.max(3,b.h*map.pxm);
+    ctx.save(); ctx.translate(c[0],c[1]); ctx.rotate(b.a);
+    ctx.fillStyle='#4a3728'; ctx.fillRect(-bw/2,-bh/2,bw,bh);
+    ctx.strokeStyle='#241a12'; ctx.lineWidth=0.8; ctx.strokeRect(-bw/2,-bh/2,bw,bh);
+    ctx.restore();
+  });
+
+  /* ---- объекты и условные знаки ---- */
+  function T(txt,x,y,font,col,dx,dy){haloText(ctx,txt,x+(dx||0),y+(dy||0),font||'800 13px "Segoe UI",sans-serif',col||C_INK);}
+  /* мост */
+  (function(){
+    var c=P(map.cross[0],map.cross[1]);
+    var a=map.river[Math.max(0,Math.floor((map.cross[1])*0))] || null;
+    var m1=null;
+    for(i=0;i<map.river.length;i++){if(Math.abs(map.river[i][0]-map.cross[0])<1){m1=map.river[i];}}
+    var near=null,nd=1e9;
+    for(i=0;i<map.river.length;i++){var d=Math.hypot(map.river[i][0]-map.cross[0],map.river[i][1]-map.cross[1]);if(d<nd){nd=d;near=map.river[i];}}
+    var q=map.river.indexOf(near);
+    var ang=Math.atan2((map.river[Math.min(60,q+1)][1]-map.river[Math.max(0,q-1)][1]),(map.river[Math.min(60,q+1)][0]-map.river[Math.max(0,q-1)][0]));
+    ctx.save(); ctx.translate(c[0],c[1]); ctx.rotate(ang+Math.PI/2);
+    ctx.strokeStyle='#1d1d1d'; ctx.lineWidth=2.2;
+    ctx.strokeRect(-13,-8,26,16); ctx.beginPath(); ctx.moveTo(-13,-3); ctx.lineTo(13,-3);
+    ctx.moveTo(-13,3); ctx.lineTo(13,3); ctx.stroke(); ctx.restore();
+  })();
+  /* ферма, мельница, колодец */
+  T('Ф',P(map.farm[0],map.farm[1])[0],P(map.farm[0],map.farm[1])[1],'900 16px "Segoe UI",sans-serif');
+  T('М',P(map.mill[0],map.mill[1])[0],P(map.mill[0],map.mill[1])[1],'900 16px "Segoe UI",sans-serif');
+  (function(){var c=P(map.well[0],map.well[1]);
+    ctx.strokeStyle='#1d1d1d'; ctx.lineWidth=1.8; ctx.beginPath(); ctx.arc(c[0],c[1],5,0,Math.PI*2); ctx.stroke();
+    ctx.beginPath(); ctx.arc(c[0],c[1],1.6,0,Math.PI*2); ctx.fillStyle='#1d1d1d'; ctx.fill();})();
+  /* пункт триангуляции */
+  (function(){var c=P(map.trig.x,map.trig.y);
+    ctx.strokeStyle='#6a2c00'; ctx.lineWidth=2; ctx.beginPath();
+    ctx.moveTo(c[0],c[1]-9); ctx.lineTo(c[0]+9,c[1]+7); ctx.lineTo(c[0]-9,c[1]+7);
+    ctx.closePath(); ctx.stroke();
+    haloText(ctx,normNum(map.trig.h,1).replace('.',','),c[0],c[1]+18,'800 13px "Segoe UI",sans-serif','#6a2c00');
+  })();
+
+  /* ---- названия ---- */
+  T(map.village.name, P(map.village.x,map.village.y)[0], P(map.village.x,map.village.y)[1]+46,
+    '800 15px "Segoe UI",sans-serif','#2a2118');
+  T(map.marsh.name, P(map.marsh.x,map.marsh.y)[0], P(map.marsh.x,map.marsh.y)[1],
+    'italic 800 14px "Segoe UI",sans-serif','#2b7bb0');
+  T(map.hill2.name+' '+normNum(map.hill2.h,1).replace('.',','),
+    P(map.hill2.x,map.hill2.y)[0], P(map.hill2.x,map.hill2.y)[1]-20,
+    'italic 800 14px "Segoe UI",sans-serif','#5a3a17');
+
+  /* километровая сетка рисуется поверх — см. drawKmGrid() */
+
+  /* ---- рамка ---- */
+  ctx.strokeStyle='#5b4a3a'; ctx.lineWidth=4; ctx.strokeRect(2,2,PW-4,PW-4);
+  for(i=0;i<=5;i++){
+    var t2=i*1000*map.pxm;
+    ctx.fillStyle='#5b4a3a';
+    ctx.fillRect(t2-1,0,2,7); ctx.fillRect(t2-1,PW-7,2,7);
+    ctx.fillRect(0,PW-t2-7,7,2); ctx.fillRect(PW-7,PW-t2-7,7,2);
+  }
+  map.base=cv;
+  return cv;
+}
+
+/* ---- легенда условных знаков ---- */
+function drawLegend(ctx,map){
+  var w=286, rows=[
+    ['line','Километровая сетка (1 × 1 км)','#7b5ea7'],
+    ['cont','Горизонталь (изогипса)','#a2703f'],
+    ['contI','Усиленная горизонталь','#8a5227'],
+    ['water','Река, озеро','#4fa3d6'],
+    ['marsh','Болото','#3f8fc0'],
+    ['road','Дорога с твёрдым покрытием','#b4642f'],
+    ['trail','Просёлочная дорога / тропа','#8a6b45'],
+    ['build','Деревня (постройки)','#4a3728'],
+    ['bridge','Мост','#1d1d1d'],
+    ['farm','Ферма','#2a2118'],
+    ['mill','Мельница','#2a2118'],
+    ['well','Колодец','#1d1d1d'],
+    ['trig','Пункт триангуляции, высота, м','#6a2c00'],
+    ['forest','Лес ( хвойный / лиственный )','#3d8a44']
+  ];
+  var rh=24, h=rows.length*rh+46;
+  var x=PW-w-14, y=PW-h-14;
+  ctx.save();
+  ctx.fillStyle='rgba(255,255,255,.96)'; ctx.strokeStyle='#8a7c66'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.roundRect(x,y,w,h,12); ctx.fill(); ctx.stroke();
+  haloText(ctx,'УСЛОВНЫЕ ЗНАКИ',x+w/2,y+19,'900 14px "Segoe UI",sans-serif','#5b4a3a');
+  rows.forEach(function(r,ix){
+    var ry=y+40+ix*rh, sx=x+16;
+    ctx.strokeStyle=r[2]; ctx.fillStyle=r[2]; ctx.lineWidth=2;
+    if(r[0]==='line'){ctx.setLineDash([6,5]);ctx.beginPath();ctx.moveTo(sx,ry);ctx.lineTo(sx+34,ry);ctx.stroke();ctx.setLineDash([]);}
+    else if(r[0]==='cont'){ctx.beginPath();ctx.moveTo(sx,ry);ctx.lineTo(sx+34,ry);ctx.lineWidth=1;ctx.stroke();ctx.lineWidth=2;}
+    else if(r[0]==='contI'){ctx.beginPath();ctx.moveTo(sx,ry);ctx.lineTo(sx+34,ry);ctx.lineWidth=3;ctx.stroke();ctx.lineWidth=2;}
+    else if(r[0]==='water'){ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(sx,ry);ctx.lineTo(sx+34,ry);ctx.stroke();ctx.lineWidth=2;}
+    else if(r[0]==='marsh'){for(var q=0;q<3;q++){ctx.beginPath();ctx.moveTo(sx+q*12,ry);ctx.lineTo(sx+q*12+8,ry);ctx.stroke();}}
+    else if(r[0]==='road'){ctx.lineWidth=7;ctx.beginPath();ctx.moveTo(sx,ry);ctx.lineTo(sx+34,ry);ctx.strokeStyle=C_ROAD;ctx.stroke();
+      ctx.lineWidth=3;ctx.strokeStyle=C_ROADD;ctx.stroke();ctx.lineWidth=2;ctx.strokeStyle=r[2];}
+    else if(r[0]==='trail'){ctx.setLineDash([5,4]);ctx.beginPath();ctx.moveTo(sx,ry);ctx.lineTo(sx+34,ry);ctx.stroke();ctx.setLineDash([]);}
+    else if(r[0]==='build'){ctx.fillRect(sx,ry-5,9,7);ctx.fillRect(sx+13,ry-4,9,6);ctx.fillRect(sx+26,ry-6,8,8);}
+    else if(r[0]==='bridge'){ctx.strokeRect(sx+6,ry-7,22,14);ctx.beginPath();ctx.moveTo(sx+6,ry-2);ctx.lineTo(sx+28,ry-2);ctx.moveTo(sx+6,ry+3);ctx.lineTo(sx+28,ry+3);ctx.stroke();}
+    else if(r[0]==='farm'||r[0]==='mill'){ctx.font='900 15px "Segoe UI",sans-serif';ctx.textAlign='left';ctx.textBaseline='middle';
+      ctx.fillText(r[0]==='farm'?'Ф':'М',sx+11,ry);}
+    else if(r[0]==='well'){ctx.beginPath();ctx.arc(sx+17,ry,5,0,Math.PI*2);ctx.stroke();
+      ctx.beginPath();ctx.arc(sx+17,ry,1.6,0,Math.PI*2);ctx.fill();}
+    else if(r[0]==='trig'){ctx.beginPath();ctx.moveTo(sx+17,ry-7);ctx.lineTo(sx+25,ry+6);ctx.lineTo(sx+9,ry+6);ctx.closePath();ctx.stroke();}
+    else if(r[0]==='forest'){ctx.beginPath();ctx.moveTo(sx+8,ry-6);ctx.lineTo(sx+3,ry+4);ctx.lineTo(sx+13,ry+4);ctx.closePath();ctx.stroke();
+      ctx.beginPath();ctx.arc(sx+27,ry-1,5,0,Math.PI*2);ctx.stroke();}
+    ctx.font='700 13px "Segoe UI",sans-serif'; ctx.fillStyle='#3b3226'; ctx.textAlign='left'; ctx.textBaseline='middle';
+    ctx.fillText(r[1],sx+44,ry+1);
+  });
+  ctx.restore();
+}
+/* ================= КИЛОМЕТРОВАЯ СЕТКА ================= */
+function drawKmGrid(ctx,map){
+  var i;
+  function lab(v){return String(v);}
+  for(i=0;i<=5;i++){
+    var gx=i*1000*map.pxm;
+    ctx.beginPath(); ctx.setLineDash([9,7]); ctx.lineWidth=1.4; ctx.strokeStyle='rgba(123,94,167,.85)';
+    ctx.moveTo(gx,0); ctx.lineTo(gx,PW); ctx.stroke();
+    ctx.moveTo(0,PW-gx); ctx.lineTo(PW,PW-gx); ctx.stroke(); ctx.setLineDash([]);
+    var lx=lab(map.E0+i), ly=lab(map.N0+i);
+    [14,PW-14].forEach(function(yy){
+      ctx.fillStyle='rgba(255,255,255,.9)'; ctx.fillRect(gx-11,yy-9,22,18);
+      haloText(ctx,lx,gx,yy,'800 13px "Segoe UI",sans-serif','#5b3a86');});
+    [14,PW-14].forEach(function(xx){
+      ctx.fillStyle='rgba(255,255,255,.9)'; ctx.fillRect(xx-11,PW-gx-9,22,18);
+      haloText(ctx,ly,xx,PW-gx,'800 13px "Segoe UI",sans-serif','#5b3a86');});
+  }
+}
+
+/* ================= ОБЩИЙ РЕНДЕР ЗАДАНИЙ ================= */
+var UID=1;
+function fieldsHTML(flds){
+  flds.forEach(function(f){ if(!f._id)f._id='fl'+(UID++); });
+  return '<div class="fields">'+flds.map(function(f){
+    return '<div class="fld"><label>'+f.lab+'</label>'+
+      '<input id="'+f._id+'" type="text" '+(f.ph?'placeholder="'+f.ph+'" ':'')+
+      (f.max?'maxlength="'+f.max+'" ':'')+(f.num?'inputmode="numeric" ':'')+
+      'autocomplete="off" spellcheck="false"/></div>';
+  }).join('')+'</div>';
+}
+function optsHTML(opts){
+  return opts.map(function(o,i){
+    return '<button class="opt" data-i="'+i+'"><span class="letter">'+'ABCD'[i]+'</span><span>'+o+'</span></button>';
+  }).join('');
+}
+function bindOpts(box){
+  box._sel=-1;
+  Array.prototype.forEach.call(box.querySelectorAll('.opt'),function(b){
+    b.addEventListener('click',function(){
+      if(b.disabled)return;
+      Array.prototype.forEach.call(box.querySelectorAll('.opt'),function(x){x.style.borderColor='';x.style.background='';});
+      b.style.borderColor='#0e9ae0'; b.style.background='#f0faff'; box._sel=+b.dataset.i;
+    });
+  });
+}
+function readVals(task,container){
+  if(task.fields) return task.fields.map(function(f){var el=document.getElementById(f._id);return el?el.value:'';});
+  return container?container._sel:-1;
+}
+function nrm(s){return String(s==null?'':s).toLowerCase().replace(/ё/g,'е').replace(/[\s.,°'"]/g,'').trim();}
+function evalTask(task,vals){
+  if(task.options){
+    var ok=(vals===task.correct);
+    return {ok:ok,ans:task.options[task.correct],fact:task.fact};
+  }
+  var ok2=task.test?task.test(vals):(nrm(vals&&vals[0])===nrm(task.answer));
+  return {ok:ok2,ans:task.display||task.answer,fact:task.fact};
+}
+function progDots(el,total,idx,results){
+  var h='';
+  for(var i=0;i<total;i++){
+    var cls=i<idx?(results[i]?'ok':'bad'):(i===idx?'on':'');
+    h+='<i class="'+cls+'"></i>';
+  }
+  el.innerHTML=h;
+}
+function panelShow(P,task,idx,total,results){
+  if(P.tag)$(P.tag).textContent=task.tag||'Задание';
+  $(P.cnt).textContent=(idx+1)+' из '+total;
+  $(P.q).innerHTML=task.q+(task.sub?'<div class="sub">'+task.sub+'</div>':'');
+  if(task.fields) $(P.inp).innerHTML=fieldsHTML(task.fields);
+  else if(task.options){$(P.inp).innerHTML=optsHTML(task.options);bindOpts($(P.inp));}
+  else $(P.inp).innerHTML=task.hint||'';
+  $(P.check).style.display='';
+  $(P.fb).className='fb';
+  $(P.next).style.display='none';
+  progDots($(P.prog),total,idx,results||[]);
+}
+function panelFb(P,res){
+  $(P.fb).className='fb show';
+  $(P.vd).className='verdict '+(res.ok?'ok':'no');
+  $(P.vd).textContent=res.ok?'✅ Верно!':('❌ '+(res.msg||'Неверно'));
+  $(P.fact).innerHTML=(res.ok?'':('<b>Правильный ответ: '+res.ans+'</b>'))+res.fact;
+  $(P.check).style.display='none';
+  $(P.next).style.display='';
+}
+
+/* ================= ЗАДАНИЯ ТОПОКАРТЫ ================= */
+function randPt(rnd,edge){
+  var m=edge||520;
+  return [m+rnd()*(MAPM-2*m), m+rnd()*(MAPM-2*m)];
+}
+function distPts(a,b){return Math.hypot(b[0]-a[0],b[1]-a[1]);}
+function azim(a,b){return (Math.atan2(b[0]-a[0],b[1]-a[1])*180/Math.PI+360)%360;}
+function dAng(a,b){var d=Math.abs(((a-b+540)%360)-180);return d;}
+function shuffleArr(arr,rnd){for(var i=arr.length-1;i>0;i--){var j=Math.floor(rnd()*(i+1)),t=arr[i];arr[i]=arr[j];arr[j]=t;}return arr;}
+function cellRectPx(map,code){
+  var cy=parseInt(code.substring(0,2),10)-map.N0, cx=parseInt(code.substring(2,4),10)-map.E0;
+  if(isNaN(cx)||isNaN(cy))return null;
+  return {x:cx*1000*map.pxm, y:PW-((cy+1)*1000*map.pxm), s:1000*map.pxm};
+}
+function genTopoTask(map,rnd,kind){
+  var t={kind:kind,tag:'Топокарта 1:25 000'};
+  if(kind==='coord'){
+    var p=randPt(rnd,560); t.pt=p;
+    var cx=Math.floor(p[0]/1000), cy=Math.floor(p[1]/1000);
+    var code=map.sqCode(p[0],p[1]);
+    t.q='Определите четырёхзначный номер километрового квадрата, в котором находится <b>точка А</b>.';
+    t.fields=[{lab:'Номер квадрата',ph:'например 6247',max:4,num:true}];
+    t.answer=code;
+    t.fact='Точка А лежит между горизонтальными (северными) линиями X '+(map.N0+cy)+' и X '+(map.N0+cy+1)+
+      ' и между вертикальными Y '+(map.E0+cx)+' и Y '+(map.E0+cx+1)+'. Записываем сначала нижнюю X, затем левую Y → <b>'+
+      code+'</b>.';
+    return t;
+  }
+  if(kind==='square'){
+    var o=pick(rnd,map.objs);
+    t.obj=o; t.q='В каком километровом квадрате находится объект: <b>'+o.name+'</b>?';
+    t.fields=[{lab:'Номер квадрата',ph:'4 цифры',max:4,num:true}];
+    t.answer=map.sqCode(o.x,o.y);
+    var ocx=Math.floor(o.x/1000), ocy=Math.floor(o.y/1000);
+    t.fact='Объект «'+o.name+'» попадает в квадрат с нижней линией X '+(map.N0+ocy)+
+      ' и левой линией Y '+(map.E0+ocx)+' → <b>'+t.answer+'</b>.';
+    return t;
+  }
+  if(kind==='what'){
+    var cells={};
+    map.objs.forEach(function(ob){var c=map.sqCode(ob.x,ob.y);(cells[c]=cells[c]||[]).push(ob);});
+    var keys=Object.keys(cells).filter(function(k){return cells[k].length===1;});
+    if(!keys.length) return genTopoTask(map,rnd,'square');
+    var key=pick(rnd,keys), right=cells[key][0];
+    var others=map.objs.filter(function(ob){return ob!==right;});
+    var opts=[right.name];
+    while(opts.length<4){var cand=pick(rnd,others); if(opts.indexOf(cand.name)<0)opts.push(cand.name);}
+    shuffleArr(opts,rnd);
+    t.cell=key;
+    t.q='Что изображено в километровом квадрате <b>'+key+'</b>?';
+    t.options=opts; t.correct=opts.indexOf(right.name);
+    t.fact='В квадрате '+key+' находится объект «'+right.name+'». Проверяйте условные знаки по легенде.';
+    return t;
+  }
+  if(kind==='azimuth'){
+    var a=randPt(rnd,600), ang=rnd()*Math.PI*2, dd=700+rnd()*1900;
+    var b=[clamp(a[0]+Math.sin(ang)*dd,300,MAPM-300), clamp(a[1]+Math.cos(ang)*dd,300,MAPM-300)];
+    var az=Math.round(azim(a,b));
+    t.a=a; t.b=b; t.az=az;
+    t.q='Определите азимут направления <b>от пункта А к пункту Б</b> (от севера, по часовой стрелке).';
+    t.fields=[{lab:'Азимут, градусы',ph:'0–359',max:3,num:true}];
+    t.display=az+'°';
+    t.test=function(v){var n=parseFloat(String(v).replace(',','.')); if(isNaN(n))return false;
+      return dAng(n,az)<=5;};
+    var rev=(az+180)%360;
+    t.fact='Азимут А→Б = <b>'+az+'°</b> (допуск ±5°). Обратный азимут Б→А = '+rev+'°. Помните: 0° — север, 90° — восток, 180° — юг, 270° — запад.';
+    return t;
+  }
+  if(kind==='distance'){
+    var a2=randPt(rnd,600), ang2=rnd()*Math.PI*2, d2=800+rnd()*1900;
+    var b2=[clamp(a2[0]+Math.sin(ang2)*d2,300,MAPM-300), clamp(a2[1]+Math.cos(ang2)*d2,300,MAPM-300)];
+    var real=distPts(a2,b2);
+    t.a=a2; t.b=b2; t.dist=real;
+    t.q='Определите расстояние <b>от пункта А до пункта Б</b> в метрах.';
+    t.fields=[{lab:'Расстояние, м',ph:'например 1650',max:5,num:true}];
+    t.display=Math.round(real/10)*10+' м';
+    t.test=function(v){var n=parseFloat(String(v).replace(',','.')); if(isNaN(n))return false;
+      return Math.abs(n-real)<=Math.max(35,real*0.03);};
+    var cellsN=(real/1000);
+    t.fact='Истинное расстояние — <b>'+Math.round(real/10)*10+' м</b> (допуск ±3 %). '+
+      'Отрезок ≈ '+cellsN.toFixed(2).replace('.',',')+' клетки километровой сетки, либо измерьте в сантиметрах и умножьте на 250 (масштаб 1:25 000).';
+    return t;
+  }
+  if(kind==='height'){
+    var h=0, ph=null, guard=0;
+    while(guard++<300){
+      var cand=randPt(rnd,400);
+      if(map.dRiver(cand[0],cand[1])<220)continue;
+      if(Math.hypot(cand[0]-map.lake.x,cand[1]-map.lake.y)<Math.max(map.lake.rx,map.lake.ry)+180)continue;
+      ph=cand; h=map.H(cand[0],cand[1]); break;
+    }
+    if(!ph){ph=randPt(rnd,600); h=map.H(ph[0],ph[1]);}
+    t.pt=ph;
+    var val=Math.round(h);
+    t.q='Определите высоту <b>точки А</b> над уровнем моря (контурное расстояние — '+map.interval+' м).';
+    t.fields=[{lab:'Высота, м',ph:'например 168',max:4,num:true}];
+    t.display=val+' м';
+    t.test=function(v){var n=parseFloat(String(v).replace(',','.')); if(isNaN(n))return false;
+      return Math.abs(n-val)<=map.interval;};
+    var lo=Math.floor(h/map.interval)*map.interval;
+    t.fact='Высота точки — около <b>'+val+' м</b> (допуск ±'+map.interval+' м). Точка лежит между горизонталями '+
+      lo+' и '+(lo+map.interval)+': прибавляйте к нижней долю расстояния × контурное расстояние.';
+    return t;
+  }
+  return genTopoTask(map,rnd,'coord');
+}
+
+function markXY(ctx,x,y,label,color){
+  color=color||'#e04040';
+  ctx.save(); ctx.beginPath(); ctx.arc(x,y,15,0,Math.PI*2);
+  ctx.fillStyle='rgba(255,255,255,.92)'; ctx.fill();
+  ctx.lineWidth=3.5; ctx.strokeStyle=color; ctx.stroke();
+  if(label){ctx.font='900 15px "Segoe UI",sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillStyle=color; ctx.fillText(label,x,y);}
+  ctx.restore();
+}
+function dashedLine(ctx,x1,y1,x2,y2){
+  ctx.save(); ctx.setLineDash([9,7]); ctx.lineWidth=2.6; ctx.strokeStyle='#e04040';
+  ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke(); ctx.restore();
+}
+function drawTopoOverlay(ctx,map,task,revealed){
+  if(!task)return;
+  var i,p;
+  if(task.kind==='coord'||task.kind==='height'){
+    p=map.toPx(task.pt[0],task.pt[1]); markXY(ctx,p[0],p[1],'А');
+    if(revealed&&task.kind==='height'){
+      var lo=Math.floor(map.H(task.pt[0],task.pt[1])/map.interval)*map.interval;
+      haloText(ctx,'≈ '+Math.round(map.H(task.pt[0],task.pt[1]))+' м',p[0]+72,p[1],'900 15px "Segoe UI",sans-serif','#1c7a33');
+    }
+  } else if(task.kind==='azimuth'||task.kind==='distance'){
+    var A=map.toPx(task.a[0],task.a[1]), B=map.toPx(task.b[0],task.b[1]);
+    dashedLine(ctx,A[0],A[1],B[0],B[1]);
+    markXY(ctx,A[0],A[1],'А'); markXY(ctx,B[0],B[1],'Б');
+    if(revealed){
+      if(task.kind==='azimuth'){
+        var az=(Math.atan2(B[0]-A[0],-(B[1]-A[1]))*180/Math.PI+360)%360;
+        /* стрелка севера */
+        ctx.save(); ctx.strokeStyle='#1c5d8a'; ctx.lineWidth=3;
+        ctx.beginPath(); ctx.moveTo(A[0],A[1]); ctx.lineTo(A[0],A[1]-86); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(A[0],A[1]-96); ctx.lineTo(A[0]-7,A[1]-82);
+        ctx.lineTo(A[0]+7,A[1]-82); ctx.closePath(); ctx.fillStyle='#1c5d8a'; ctx.fill();
+        haloText(ctx,'С',A[0],A[1]-110,'900 15px "Segoe UI",sans-serif','#1c5d8a');
+        /* дуга угла */
+        var s=-Math.PI/2, e=(az-90)*Math.PI/180;
+        ctx.strokeStyle='#e04040'; ctx.lineWidth=3; ctx.setLineDash([6,5]);
+        ctx.beginPath(); ctx.arc(A[0],A[1],58,s,e,false); ctx.stroke(); ctx.setLineDash([]);
+        var mid=(s+e)/2;
+        haloText(ctx,Math.round(az)+'°',A[0]+Math.cos(mid)*76,A[1]+Math.sin(mid)*76,
+          '900 16px "Segoe UI",sans-serif','#e04040');
+        ctx.restore();
+      } else {
+        var mx=(A[0]+B[0])/2, my=(A[1]+B[1])/2;
+        haloText(ctx,Math.round(task.dist/10)*10+' м',mx,my-18,'900 16px "Segoe UI",sans-serif','#e04040');
+      }
+    }
+  } else if(task.kind==='square'&&task.obj){
+    p=map.toPx(task.obj.x,task.obj.y);
+    ctx.save(); ctx.beginPath(); ctx.arc(p[0],p[1],30,0,Math.PI*2);
+    ctx.strokeStyle='#e04040'; ctx.lineWidth=3.5; ctx.setLineDash([7,5]); ctx.stroke(); ctx.restore();
+    haloText(ctx,'?',p[0],p[1]-46,'900 19px "Segoe UI",sans-serif','#e04040');
+  } else if(task.kind==='what'&&task.cell){
+    var r=cellRectPx(map,task.cell);
+    if(r){
+      ctx.save(); ctx.strokeStyle='#e04040'; ctx.lineWidth=4; ctx.strokeRect(r.x+2,r.y+2,r.s-4,r.s-4);
+      haloText(ctx,task.cell,r.x+r.s/2,r.y-14,'900 17px "Segoe UI",sans-serif','#e04040'); ctx.restore();
+    }
+  }
+}
+
+/* ================= РЕЖИМ «ТОПОКАРТА» ================= */
+var PT={tag:'tpTag',cnt:'tpCnt',prog:'tpProg',q:'tpQ',inp:'tpIn',check:'tpCheck',
+        fb:'tpFb',vd:'tpVd',fact:'tpFact',next:'tpNext'};
+var TOPO_KINDS=['coord','square','azimuth','distance','height','coord','what','azimuth','square','distance'];
+var topoTasks=[], topoIdx=0, topoRes=[], topoCur=null, topoLocked=false, topoRevealed=false;
+var TOP_OPTS={grid:true,legend:false};
+
+function drawTopoAll(){
+  var cv=$('topoCv'), ctx=cv.getContext('2d');
+  ctx.clearRect(0,0,PW,PW);
+  if(TOPOMAP&&TOPOMAP.base){ctx.drawImage(TOPOMAP.base,0,0);}
+  if(TOP_OPTS.grid&&TOPOMAP)drawKmGrid(ctx,TOPOMAP);
+  if(TOP_OPTS.legend&&TOPOMAP)drawLegend(ctx,TOPOMAP);
+  drawTopoOverlay(ctx,TOPOMAP,topoCur,topoRevealed);
+}
+function startTopoRound(seed){
+  if(!TOPOMAP) newTopoMap(seed);
+  renderTopoBase(TOPOMAP);
+  var rnd=mulberry32((seed||(1+Math.floor(Math.random()*1e9)))^0x9e3779b9);
+  var kinds=shuffleArr(TOPO_KINDS.slice(),rnd);
+  topoTasks=kinds.map(function(k){return genTopoTask(TOPOMAP,rnd,k);});
+  topoIdx=0; topoRes=[]; showTopoTask();
+}
+function showTopoTask(){
+  topoCur=topoTasks[topoIdx]; topoLocked=false; topoRevealed=false;
+  panelShow(PT,topoCur,topoIdx,10,topoRes);
+  drawTopoAll();
+  var inp=$(PT.inp).querySelector('input');
+  if(inp)setTimeout(function(){inp.focus();},30);
+}
+function topoAnswer(shown){
+  if(topoLocked)return;
+  var res;
+  if(shown){
+    res={ok:false,ans:'—',msg:'Ответ показан — без очков',fact:topoCur.fact};
+  } else {
+    var vals=readVals(topoCur,$(PT.inp));
+    if(topoCur.fields&&vals.every(function(v){return String(v).trim()===''})){
+      res={ok:false,ans:'—',msg:'Введите ответ',fact:topoCur.fact};
+    } else {
+      res=evalTask(topoCur,vals);
+    }
+  }
+  topoLocked=true; topoRevealed=true;
+  topoRes[topoIdx]=res.ok?1:0;
+  if(res.ok)addScore(5);
+  panelFb(PT,res);
+  progDots($(PT.prog),10,topoIdx,topoRes);
+  drawTopoAll();
+}
+function topoNext(){
+  if(!topoLocked)return;
+  topoIdx++;
+  if(topoIdx>=10){finishTopo();return;}
+  showTopoTask();
+}
+function finishTopo(){
+  var ok=topoRes.filter(function(v){return v;}).length;
+  if(ok>(ST.bestTopo||0)){ST.bestTopo=ok;saveST();}
+  openModal(
+    '<span class="bigEmoji">'+(ok>=9?'🏆':ok>=7?'🌟':ok>=5?'👍':'📖')+'</span>'+
+    '<h1>Тренировка завершена</h1>'+
+    '<div class="scoreLine">Верно '+ok+' из 10 · +'+(ok*5)+' очков</div>'+
+    '<div class="rank">Лучший результат: '+ST.bestTopo+'/10</div>'+
+    '<p>Каждое задание на топокарте — это '+2+' балла на реальном ЦТ (раздел заданий №2, 20 баллов всего).</p>'+
+    '<div class="chips"><span class="chip">координаты</span><span class="chip">азимут</span>'+
+    '<span class="chip">расстояние</span><span class="chip">высоты</span><span class="chip">привязка</span></div>'+
+    '<div class="secBtns">'+
+    '<button class="btn" data-act="topoAgain">🔄 Ещё 10 заданий</button>'+
+    '<button class="btn green" data-act="topoNewMap">🎲 Другая карта</button>'+
+    '<button class="btn ghost" data-act="close">Закрыть</button></div>'
+  );
+}
+/* ================= РЕЖИМ «ПРОФИЛЬ МЕСТНОСТИ» ================= */
+var PP={cnt:'ppCnt',prog:'ppProg',q:'ppQ',inp:'ppIn',check:'ppCheck',
+        fb:'ppFb',vd:'ppVd',fact:'ppFact',next:'ppNext'};
+var PROF={a:null,b:null,L:0,samples:[],pts:[],stage:0,res:[],locked:false,yMin:0,yMax:0,
+          nTol:0,revealed:false};
+var GW=900, GH=360, GM={l:66,r:26,t:30,b:46};
+
+function profGx(f){return GM.l+f*(GW-GM.l-GM.r);}
+function profGy(v){return GM.t+(1-(v-PROF.yMin)/(PROF.yMax-PROF.yMin))*(GH-GM.t-GM.b);}
+function profY2v(py){
+  var f=(py-GM.t)/(GH-GM.t-GM.b);
+  return PROF.yMin+(1-f)*(PROF.yMax-PROF.yMin);
+}
+function trueAt(frac){
+  var idx=frac*(PROF.samples.length-1), i0=Math.floor(idx), i1=Math.min(PROF.samples.length-1,i0+1), t=idx-i0;
+  return PROF.samples[i0].h*(1-t)+PROF.samples[i1].h*t;
+}
+function startProfile(){
+  if(!TOPOMAP)newTopoMap();
+  if(!TOPOMAP.base)renderTopoBase(TOPOMAP);
+  var rnd=Math.random, A,B,L=0,g=0;
+  while(g++<300){
+    A=[500+rnd()*(MAPM-1000),700+rnd()*(MAPM-1400)];
+    var ang=(rnd()<.5?0:Math.PI)+(rnd()-0.5)*1.5, len=2500+rnd()*1300;
+    B=[A[0]+Math.cos(ang)*len, A[1]+Math.sin(ang)*len];
+    if(B[0]<400||B[0]>MAPM-400||B[1]<400||B[1]>MAPM-400)continue;
+    L=distPts(A,B); break;
+  }
+  if(!L){A=[600,2500];B=[4400,2500];L=3800;}
+  PROF.a=A; PROF.b=B; PROF.L=L; PROF.revealed=false;
+  var N=241, s=[];
+  for(var i=0;i<N;i++){
+    var t=i/(N-1), x=A[0]+(B[0]-A[0])*t, y=A[1]+(B[1]-A[1])*t;
+    s.push({t:t,h:TOPOMAP.H(x,y)});
+  }
+  PROF.samples=s;
+  var hs=s.map(function(p){return p.h;});
+  PROF.yMin=Math.floor((Math.min.apply(null,hs)-4)/5)*5;
+  PROF.yMax=Math.ceil((Math.max.apply(null,hs)+4)/5)*5;
+  PROF.pts=[];
+  for(var k=1;k<=7;k++) PROF.pts.push({f:k/8, v:(PROF.yMin+PROF.yMax)/2, ok:null});
+  PROF.stage=0; PROF.res=[]; PROF.locked=false;
+  showProfileStage();
+}
+function showProfileStage(){
+  var st=PROF.stage, task;
+  if(st===0){
+    task={q:'Постройте профиль местности по линии <b>А → Б</b>: перетаскивайте оранжевые точки по вертикали так, чтобы линия совпала с рельефом.',
+          hint:'<div class="sub">Ось Y — высота (м), ось X — расстояние от пункта А. Точки стоят на равных расстояниях (каждые '+
+            Math.round(PROF.L/8)+' м). Контурное расстояние на карте — '+TOPOMAP.interval+' м.</div>'};
+    $(PP.check).textContent='Проверить профиль';
+  } else if(st===1){
+    task={q:'Определите <b>превышение пункта Б над пунктом А</b> (в метрах).',
+          hint:'',fields:[{lab:'Превышение Б − А, м',ph:'например 14',max:4,num:true}],
+          _ans:String(Math.round(PROF.samples[PROF.samples.length-1].h-PROF.samples[0].h)),
+          _tol:2,
+          _fact:'H(Б) − H(А) = '+Math.round(PROF.samples[PROF.samples.length-1].h)+' − '+
+                Math.round(PROF.samples[0].h)+' = <b>'+
+                (Math.round(PROF.samples[PROF.samples.length-1].h-PROF.samples[0].h))+' м</b> (допуск ±2 м). '+
+                'Если результат отрицательный — пункт Б ниже пункта А.'};
+    $(PP.check).textContent='Ответить';
+  } else {
+    var mx=-1e9; PROF.samples.forEach(function(p){if(p.h>mx)mx=p.h;});
+    task={q:'Определите <b>наивысшую высоту маршрута</b> А → Б (в метрах).',
+          hint:'',fields:[{lab:'Наивысшая высота, м',ph:'например 186',max:4,num:true}],
+          _ans:String(Math.round(mx)),_tol:2,
+          _fact:'Максимум на линии А → Б — около <b>'+Math.round(mx)+' м</b> (допуск ±2 м). '+
+                'Смотрите замкнутые горизонтали и подписи высот вдоль линии.'};
+    $(PP.check).textContent='Ответить';
+  }
+  task.tag='Профиль';
+  panelShow(PP,task,PROF.stage,3,PROF.res);
+  PROF.cur=task;
+  drawProfAll();
+}
+function drawProfAll(){
+  var cv=$('profCv'), ctx=cv.getContext('2d');
+  ctx.clearRect(0,0,900,900);
+  if(TOPOMAP.base)ctx.drawImage(TOPOMAP.base,0,0);
+  if($('pfGrid').classList.contains('on'))drawKmGrid(ctx,TOPOMAP);
+  var A=TOPOMAP.toPx(PROF.a[0],PROF.a[1]), B=TOPOMAP.toPx(PROF.b[0],PROF.b[1]);
+  ctx.save(); ctx.setLineDash([12,8]); ctx.lineWidth=4; ctx.strokeStyle='#e04040';
+  ctx.beginPath(); ctx.moveTo(A[0],A[1]); ctx.lineTo(B[0],B[1]); ctx.stroke(); ctx.restore();
+  markXY(ctx,A[0],A[1],'А','#c22c2c'); markXY(ctx,B[0],B[1],'Б','#c22c2c');
+  haloText(ctx,'линия сечения', (A[0]+B[0])/2, (A[1]+B[1])/2-24,
+    '800 15px "Segoe UI",sans-serif','#a33a2a');
+  drawGraph();
+}
+function drawGraph(){
+  var cv=$('graphCv'), ctx=cv.getContext('2d'), i;
+  ctx.clearRect(0,0,GW,GH);
+  ctx.fillStyle='#fff'; ctx.fillRect(0,0,GW,GH);
+  /* рамка построения */
+  ctx.fillStyle='#f3f8fc'; ctx.fillRect(GM.l,GM.t,GW-GM.l-GM.r,GH-GM.t-GM.b);
+  var range=PROF.yMax-PROF.yMin;
+  var yStep=range<=30?5:(range<=65?10:20);
+  ctx.font='700 12px "Segoe UI",sans-serif'; ctx.textAlign='right'; ctx.textBaseline='middle';
+  for(var v=Math.ceil(PROF.yMin/yStep)*yStep; v<=PROF.yMax; v+=yStep){
+    var y=profGy(v);
+    ctx.strokeStyle='#dbe8f2'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(GM.l,y); ctx.lineTo(GW-GM.r,y); ctx.stroke();
+    ctx.strokeStyle='#8fb0c6'; ctx.beginPath(); ctx.moveTo(GM.l-5,y); ctx.lineTo(GM.l,y); ctx.stroke();
+    ctx.fillStyle='#5b829a'; ctx.fillText(String(v),GM.l-9,y);
+  }
+  var xStep=PROF.L>3000?1000:500;
+  ctx.textAlign='center'; ctx.textBaseline='top';
+  for(var m=0;m<=PROF.L+1;m+=xStep){
+    var x=profGx(m/PROF.L);
+    ctx.strokeStyle='#dbe8f2'; ctx.beginPath(); ctx.moveTo(x,GM.t); ctx.lineTo(x,GH-GM.b); ctx.stroke();
+    ctx.fillStyle='#5b829a'; ctx.fillText(String(m),x,GH-GM.b+7);
+  }
+  /* оси */
+  ctx.strokeStyle='#4a7590'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.moveTo(GM.l,GM.t-6); ctx.lineTo(GM.l,GH-GM.b); ctx.lineTo(GW-GM.r+6,GH-GM.b); ctx.stroke();
+  haloText(ctx,'высота, м',GM.l-4,GM.t-14,'800 13px "Segoe UI",sans-serif','#4a7590','left');
+  haloText(ctx,'расстояние от пункта А, м',GW-GM.r,GH-GM.b+24,'800 13px "Segoe UI",sans-serif','#4a7590','right');
+  haloText(ctx,'А · '+Math.round(PROF.samples[0].h)+' м',profGx(0)+8,profGy(PROF.samples[0].h)-16,
+    '800 13px "Segoe UI",sans-serif','#c22c2c','left');
+  haloText(ctx,'Б · '+Math.round(PROF.samples[PROF.samples.length-1].h)+' м',profGx(1)-8,
+    profGy(PROF.samples[PROF.samples.length-1].h)-16,'800 13px "Segoe UI",sans-serif','#c22c2c','right');
+
+  /* эталонный профиль — после проверки */
+  if(PROF.revealed){
+    ctx.save();
+    ctx.beginPath(); ctx.moveTo(profGx(0),GH-GM.b);
+    PROF.samples.forEach(function(p){ctx.lineTo(profGx(p.t),profGy(p.h));});
+    ctx.lineTo(profGx(1),GH-GM.b); ctx.closePath();
+    ctx.fillStyle='rgba(46,184,74,.13)'; ctx.fill();
+    ctx.beginPath();
+    PROF.samples.forEach(function(p,i2){var x=profGx(p.t),y=profGy(p.h); if(i2===0)ctx.moveTo(x,y); else ctx.lineTo(x,y);});
+    ctx.strokeStyle='#2eb84a'; ctx.lineWidth=2.5; ctx.setLineDash([8,6]); ctx.stroke(); ctx.setLineDash([]);
+    ctx.restore();
+  }
+  /* профиль ученика */
+  if(PROF.pts.length){
+    ctx.beginPath();
+    ctx.moveTo(profGx(0),profGy(PROF.samples[0].h));
+    PROF.pts.forEach(function(p){ctx.lineTo(profGx(p.f),profGy(p.v));});
+    ctx.lineTo(profGx(1),profGy(PROF.samples[PROF.samples.length-1].h));
+    ctx.strokeStyle='#f0a000'; ctx.lineWidth=3; ctx.stroke();
+    PROF.pts.forEach(function(p){
+      var x=profGx(p.f), y=profGy(p.v);
+      ctx.beginPath(); ctx.arc(x,y,9,0,Math.PI*2);
+      ctx.fillStyle=p.ok===null?'#fff':(p.ok?'#2eb84a':'#ef5f3c');
+      ctx.fill(); ctx.strokeStyle=p.ok===null?'#f0a000':(p.ok?'#1c7a33':'#b03a1c');
+      ctx.lineWidth=3; ctx.stroke();
+      if(p.ok!==null&&!p.ok){
+        var ty=profGy(trueAt(p.f));
+        ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x,ty);
+        ctx.strokeStyle='#ef5f3c'; ctx.lineWidth=2; ctx.setLineDash([4,4]); ctx.stroke(); ctx.setLineDash([]);
+        ctx.beginPath(); ctx.arc(x,ty,5,0,Math.PI*2); ctx.strokeStyle='#ef5f3c'; ctx.lineWidth=2; ctx.stroke();
+      }
+    });
+  }
+}
+function profPointer(e){
+  var cv=$('graphCv'), r=cv.getBoundingClientRect();
+  return [ (e.clientX-r.left)*(GW/r.width), (e.clientY-r.top)*(GH/r.height) ];
+}
+function profCheck(){
+  if(PROF.stage===0){
+    var ok=true, bad=0;
+    PROF.pts.forEach(function(p){
+      var tv=trueAt(p.f); p.ok=Math.abs(p.v-tv)<=3; if(!p.ok){ok=false;bad++;}
+    });
+    PROF.revealed=true;
+    PROF.res[0]=ok?1:0;
+    if(ok)addScore(10);
+    var t=PROF.cur;
+    panelShow(PP,t,PROF.stage,3,PROF.res);
+    panelFb(PP,{ok:ok,msg:ok?'':'Вне допуска точек: '+bad+' из 7',
+      ans:'профиль построен неточно',
+      fact:ok?'Профиль совпал с рельефом: синяя пунктирная линия — эталон. Вы поместили все 7 точек в пределах ±3 м.'
+             :'Зелёный пунктир — эталонный профиль. Обратите внимание: чем чаще горизонтали на линии сечения, тем круче склон; '+
+              'на слиянии горизонталей склон становится обрывом.'});
+    $(PP.check).style.display='none';
+    drawGraph();
+  } else {
+    var task=PROF.cur, vals=readVals(task,$(PP.inp));
+    var n=parseFloat(String(vals[0]||'').replace(',','.'));
+    var ok2=!isNaN(n)&&Math.abs(n-parseFloat(task._ans))<=task._tol;
+    PROF.res[PROF.stage]=ok2?1:0;
+    if(ok2)addScore(5);
+    panelFb(PP,{ok:ok2,ans:task._ans+' м',fact:task._fact});
+    progDots($(PP.prog),3,PROF.stage,PROF.res);
+  }
+}
+function profNext(){
+  PROF.stage++;
+  if(PROF.stage>2){
+    var ok=PROF.res.filter(function(v){return v;}).length;
+    openModal(
+      '<span class="bigEmoji">'+(ok===3?'🏔️':'🧗')+'</span>'+
+      '<h1>Профиль построен</h1>'+
+      '<div class="scoreLine">Верно '+ok+' из 3 этапов · +'+
+        (PROF.res[0]?10:0)+(PROF.res[1]?5:0)+(PROF.res[2]?5:0)+' очков</div>'+
+      '<p>На реальном ЦТ построение профиля и работа с горизонталями входят в задание о топографической карте.</p>'+
+      '<div class="secBtns">'+
+      '<button class="btn" data-act="profAgain">⛰️ Новая линия сечения</button>'+
+      '<button class="btn ghost" data-act="close">Закрыть</button></div>');
+    return;
+  }
+  showProfileStage();
+}
+/* ================= КОНТУРНАЯ КАРТА МИРА ================= */
+var WW=980, WH=500, LT=85, LB=-85;
+function wx(lon){return (lon+180)/360*WW;}
+function wy(lat){return (LT-lat)/(LT-LB)*WH;}
+function wLon(x){return clamp(x/WW*360-180,-180,180);}
+function wLat(y){return clamp(LT-(y/WH)*(LT-LB),LB,LT);}
+function inPoly(lon,lat,poly){
+  var inside=false;
+  for(var i=0,j=poly.length-1;i<poly.length;j=i++){
+    var xi=poly[i][0],yi=poly[i][1],xj=poly[j][0],yj=poly[j][1];
+    if(((yi>lat)!==(yj>lat))&&(lon<(xj-xi)*(lat-yi)/(yj-yi)+xi))inside=!inside;
+  }
+  return inside;
+}
+var SEA=[
+  {n:'Средиземное море',o:'Атлантический океан',p:[[-6,36],[-2,36.7],[0,38.5],[1,41],[3,42],[5,43],[7,44],[9,44],[10,44],[11,42],[12,41],[14,40],[16,38],[18,40],[16,42],[13,45],[15,44],[17,43],[19,42],[19,40],[21,39],[23,38],[24,40],[26,40],[27,38],[28,36.5],[31,36.5],[34,36],[35,33],[34,31],[33,31],[32.5,31],[30,31],[25,31],[20,31],[15,32],[11,33],[10,37],[7,37],[3,37],[0,36.5],[-6,36]]},
+  {n:'Чёрное море',o:'Атлантический океан',p:[[29,41],[34,42],[39,42],[41,43],[40,45],[36,46],[32,46],[30,45],[28,42],[29,41]]},
+  {n:'Балтийское море',o:'Атлантический океан',p:[[11,55],[14,54],[19,54],[21,56],[24,59],[25,62],[21,65],[19,64],[17,61],[16,57],[14,55],[12,55],[11,55]]},
+  {n:'Финский залив',o:'Атлантический океан',p:[[23,59.5],[30,59.8],[30,60.4],[23,60.4],[23,59.5]]},
+  {n:'Каспийское море',o:'Каспийское море (бессточное)',p:[[50,38],[49,41],[48,44],[49,47],[51,47],[53,46],[54,43],[53,40],[51,38],[50,38]]},
+  {n:'Персидский залив',o:'Индийский океан',p:[[48,30],[50,29],[53,27],[56,27],[57,26],[54,24],[51,25],[48,29],[48,30]]}
+];
+var LAND=[
+ {n:'Африка',p:[[-6,35.9],[-1,35.8],[3,36.8],[8,37],[11,37],[11,33],[15,32],[19,30.5],[25,31.5],[30,31.4],[32.5,31.2],[34,31],[34.5,28],[36,24],[38,20],[39,15],[43,12.5],[45,12.3],[48,11.5],[51.4,11.8],[51,10],[50,8],[47,4],[44,2],[42.5,-0.5],[40.5,-4],[40,-8],[40.5,-13],[39,-16],[35,-19],[35,-24],[32,-26],[30,-31],[27,-33],[24,-34],[20,-34.8],[17,-30],[15,-27],[13,-23],[12,-17],[12,-9],[13,-6],[11,-2],[9,3],[9,4],[5,5],[1,5],[-3,5],[-7.5,4.4],[-11,6.5],[-13,9],[-16,12],[-17,15],[-16,19],[-16,22],[-15,24],[-13,27],[-10,30],[-9,32],[-6,35.9]]},
+ {n:'Евразия',p:[[-9,36.5],[-9,39],[-9,43],[-8,44],[-4,44],[-1,46],[-1.5,47],[-2,48],[-4,48.5],[-2,49],[-1,50],[2,51],[4,53],[7,53.5],[8,55],[9,57],[11,58.5],[10,59.5],[7,58],[5,59],[5,62],[7,63],[11,64],[14,67],[18,69],[23,71],[28,71],[31,70],[33,69],[38,66],[41,66],[44,68],[48,68],[54,68],[60,70],[66,71],[69,73],[73,73],[76,68],[79,72],[86,73],[90,75],[100,77],[110,76],[113,73],[120,73],[128,73],[136,72],[142,72],[150,70],[159,70],[167,69],[175,67],[180,66],[180,63],[172,61],[165,60],[163,57],[158,55],[156,51],[152,59],[143,59],[139,59],[137,54],[135,50],[133,45],[131,43],[128,40],[126,38],[126,35],[129,35],[129,38],[130,40],[131,43],[122,40],[118,39],[121,37],[119,35],[119,33],[121,32],[122,30],[121,28],[117,24],[113,22],[110,21],[108,21],[107,18],[109,13],[106,10],[104,9],[101,13],[100,8],[104,1.5],[100,5],[99,8],[98,10],[97,16],[94,16],[91,22],[88,21],[84,19],[80,15],[77,8],[73,15],[70,21],[67,24],[61,25],[59,22],[52,15],[45,13],[43,12.5],[41,17],[39,21],[37,24],[34,28],[32.5,31],[34,31],[35,33],[36,36],[33,36],[31,36.5],[28,36.5],[27,38],[26,40],[24,40],[23,38],[21,39],[19,40],[19,42],[15,44],[13,45],[16,42],[18,40],[16,38],[14,40],[12,41],[11,42],[10,44],[9,44],[7,44],[5,43],[3,42],[1,41],[0,38.5],[-2,36.7],[-9,36.5]]},
+ {n:'Северная Америка',p:[[-168,66],[-165,61],[-162,58],[-157,57],[-152,58],[-148,60],[-140,59],[-133,55],[-127,51],[-124,46],[-123,39],[-118,34],[-114,31],[-112,27],[-109,23],[-105,20],[-100,17],[-96,16],[-94,18],[-92,18],[-90,16],[-87,13],[-84,10],[-79,9],[-77,8],[-79,9],[-83,11],[-87,16],[-91,18],[-95,19],[-97,22],[-97,26],[-94,29],[-90,29],[-87,30],[-84,30],[-82,27],[-80,26],[-81,31],[-78,34],[-75,36],[-74,40],[-70,42],[-67,45],[-64,46],[-60,47],[-56,51],[-58,54],[-62,57],[-66,58],[-70,61],[-77,63],[-79,57],[-80,53],[-85,55],[-90,58],[-94,60],[-92,64],[-88,66],[-95,68],[-105,69],[-115,70],[-125,70],[-135,69],[-141,70],[-150,71],[-160,70],[-166,68],[-168,66]]},
+ {n:'Южная Америка',p:[[-77,8],[-75,10],[-71,12],[-64,10],[-61,9],[-57,6],[-52,5],[-50,2],[-48,-1],[-44,-2],[-38,-4],[-35,-6],[-39,-13],[-39,-18],[-42,-23],[-48,-25],[-53,-33],[-57,-35],[-57,-38],[-62,-39],[-64,-42],[-67,-45],[-69,-50],[-68,-55],[-71,-55],[-73,-52],[-75,-47],[-73,-42],[-73,-37],[-71,-30],[-70,-23],[-71,-18],[-75,-15],[-79,-8],[-81,-6],[-80,-2],[-78,1],[-77,4],[-77,8]]},
+ {n:'Австралия',p:[[113,-22],[114,-26],[115,-34],[118,-35],[124,-33],[130,-32],[135,-35],[138,-35],[140,-38],[145,-38],[147,-38],[150,-37],[153,-31],[153,-27],[152,-24],[149,-21],[146,-19],[143,-15],[142,-11],[137,-12],[136,-15],[131,-12],[129,-15],[125,-14],[122,-17],[117,-20],[113,-22]]},
+ {n:'Антарктида',p:[[-180,-70],[-160,-75],[-140,-74],[-120,-73],[-100,-73],[-80,-70],[-65,-64],[-60,-70],[-40,-76],[-20,-70],[0,-69],[20,-69],[40,-67],[60,-67],[80,-66],[100,-66],[120,-66],[140,-66],[160,-77],[180,-78],[180,-85],[-180,-85],[-180,-70]]},
+ {n:'Гренландия',p:[[-45,60],[-52,64],[-53,68],[-58,72],[-65,76],[-60,79],[-45,82],[-30,83],[-22,79],[-25,74],[-33,70],[-40,66],[-45,60]]},
+ {n:'Мадагаскар',p:[[49,-12],[50,-15],[50,-18],[47,-25],[45,-25],[44,-21],[43,-17],[46,-13],[49,-12]]},
+ {n:'Великобритания',p:[[-5,50],[-3,51],[1,51],[0,53],[-1,54],[-2,56],[-4,58],[-6,57],[-6,55],[-5,53],[-5,50]]},
+ {n:'Ирландия',p:[[-10,52],[-6,52],[-6,54],[-8,55],[-10,54],[-10,52]]},
+ {n:'Исландия',p:[[-24,65],[-22,66.5],[-16,66.5],[-14,65],[-18,63.5],[-22,64],[-24,65]]},
+ {n:'Япония',p:[[141,42],[142,40],[141,38],[140,36],[137,37],[135,34],[132,34],[131,31],[130,33],[133,36],[136,36],[139,35],[140,38],[139,41],[141,42]]},
+ {n:'Новая Зеландия',p:[[173,-41],[178,-38],[175,-36],[173,-39],[173,-41]]},
+ {n:'Новая Зеландия',p:[[167,-47],[171,-44],[174,-41],[170,-46],[167,-47]]},
+ {n:'Индонезия',p:[[95,5],[104,-6],[106,-6],[102,-5],[97,2],[95,5]]},
+ {n:'Индонезия',p:[[105,-6],[114,-7],[114,-9],[106,-8],[105,-6]]},
+ {n:'Индонезия',p:[[109,2],[117,4],[119,0],[117,-4],[110,-3],[109,1],[109,2]]},
+ {n:'Новая Гвинея',p:[[131,-1],[141,-3],[147,-6],[150,-10],[143,-9],[138,-8],[133,-4],[131,-1]]},
+ {n:'Куба',p:[[-85,22],[-77,20],[-74,20],[-79,23],[-84,23],[-85,22]]},
+ {n:'Шри-Ланка',p:[[80,6],[82,7],[81,9],[80,9],[79,7],[80,6]]},
+ {n:'Филиппины',p:[[120,18],[124,17],[126,13],[126,7],[122,6],[120,12],[120,18]]}
+];
+function oceanAt(lon,lat){
+  if(lat>66)return 'Северный Ледовитый океан';
+  if(lat<-56)return 'Южный океан';
+  if(lon>110||lon<-70)return 'Тихий океан';
+  if(lon>25&&lon<=110&&lat<32)return 'Индийский океан';
+  if(lon>=-70&&lon<=45)return 'Атлантический океан';
+  return 'Мировой океан';
+}
+function seaAt(lon,lat){
+  for(var i=0;i<SEA.length;i++)if(inPoly(lon,lat,SEA[i].p))return SEA[i];
+  return null;
+}
+function landAt(lon,lat){
+  for(var i=0;i<LAND.length;i++)if(inPoly(lon,lat,LAND[i].p))return LAND[i].n;
+  return null;
+}
+function whereIs(lon,lat){
+  var s=seaAt(lon,lat); if(s)return s.o;
+  var l=landAt(lon,lat); if(l)return l;
+  return oceanAt(lon,lat);
+}
+
+/* ---- объекты для кликов на карте мира ---- */
+var WORLD_OBJ=[
+ ['Москва',37.6,55.75],['Пекин',116.4,39.9],['Токио',139.7,35.7],['Лондон',-0.1,51.5],
+ ['Париж',2.35,48.85],['Берлин',13.4,52.5],['Каир',31.25,30.05],['Канберра',149.1,-35.3],
+ ['Вашингтон',-77,38.9],['Оттава',-75.7,45.4],['Бразилиа',-47.9,-15.8],['Буэнос-Айрес',-58.4,-34.6],
+ ['Нью-Делли',77.2,28.6],['Джакарта',106.8,-6.2],['Мехико',-99.1,19.4],['Анкара',32.85,39.9],
+ ['Тегеран',51.4,35.7],['Эр-Рияд',46.7,24.7],['Найроби',36.8,-1.3],['Лагос',3.4,6.5],
+ ['Киншаса',15.3,-4.3],['Хараре',31,-17.8],['Аддис-Абеба',38.7,9.0],['Афины',23.7,38.0],
+ ['Рим',12.5,41.9],['Мадрид',-3.7,40.4],['Лиссабон',-9.1,38.7],['Стокгольм',18,59.3],
+ ['Хельсинки',25,60.2],['Варшава',21,52.2],['Киев',30.5,50.45],['Минск',27.6,53.9],
+ ['г. Эверест',86.9,27.99],['г. Эльбрус',42.35,43.35],['г. Килиманджаро',37.35,-3.07],
+ ['г. Монблан',6.86,45.83],['г. Аконкагуа',-70.0,-32.65],['г. Денали (Мак-Кинли)',-151,63.1],
+ ['возвышенность Тибет',88,32],['пустыня Сахара',10,23],['р. Амазонка (устье)',-50,-1],
+ ['р. Нил (устье)',31.2,31.2],['водопад Виктория',25.9,-17.9],['Марианский жёлоб',142.2,11.3],
+ ['Гранд-Каньон',-112.1,36.1],['Большой Барьерный риф',147,-18],['оз. Байкал',108,53.5],
+ ['о. Гренландия',-42,72],['о. Мадагаскар',46.5,-19],['г. Кракатау',105.4,-6.1],
+ ['Багамские орова',-77,24],['о. Таити',-149.5,-17.6],['п-ов Индостан',78,20]
+];
+
+/* ---- контурная карта Беларуси ---- */
+var BL={lon0:23.1,lon1:32.9,lat0:51.2,lat1:56.3,kx:Math.cos(54*Math.PI/180)};
+var BK=Math.min((WW-170)/((BL.lon1-BL.lon0)*BL.kx),(WH-40)/(BL.lat1-BL.lat0));
+var BMX=(WW-(BL.lon1-BL.lon0)*BL.kx*BK)/2, BMY=(WH-(BL.lat1-BL.lat0)*BK)/2;
+function bx(lon){return BMX+(lon-BL.lon0)*BL.kx*BK;}
+function by(lat){return BMY+(BL.lat1-lat)*BK;}
+function bLon(x){return BL.lon0+(x-BMX)/(BL.kx*BK);}
+function bLat(y){return BL.lat1-(y-BMY)/BK;}
+
+var BEL_OUT=[[23.17,53.9],[23.5,54.1],[24.1,54.1],[24.6,54.4],[25.4,54.9],[25.8,55.3],
+ [26.5,55.7],[27.2,56.1],[28.2,56.15],[29.2,55.8],[30.2,55.65],[31.2,55.4],[31.8,55.0],
+ [32.0,54.4],[31.7,54.0],[31.5,53.6],[32.2,53.3],[32.7,53.1],[31.9,52.8],[31.5,52.5],
+ [31.8,52.1],[31.0,51.6],[30.5,51.4],[29.5,51.6],[28.7,51.6],[27.7,51.5],[26.5,51.8],
+ [25.5,51.6],[24.5,51.9],[23.8,52.1],[23.6,52.4],[23.2,52.4],[23.5,53.0],[23.6,53.4],
+ [23.3,53.7],[23.17,53.9]];
+var BEL_RIV=[
+ {n:'Днепр',p:[[30.6,55.6],[30.3,55.3],[30.25,55.19],[30.6,54.8],[30.41,54.51],[30.7,54.2],
+   [30.34,53.9],[30.3,53.5],[30.05,53.1],[29.97,52.9],[30.05,52.8],[30.3,52.5],[30.65,51.9],[30.7,51.55]]},
+ {n:'Березина',p:[[28.5,54.35],[28.6,54.0],[28.9,53.6],[29.22,53.14],[29.4,52.8],[29.7,52.5],[30.2,52.3],[30.6,52.05]]},
+ {n:'Припять',p:[[25.9,52.3],[26.11,52.12],[26.8,52.0],[27.5,51.9],[28.3,51.9],[29.0,52.0],[29.27,52.05],[29.8,52.1],[30.6,52.05],[30.95,51.9]]},
+ {n:'Нёман',p:[[26.5,53.8],[25.9,53.5],[25.32,53.09],[24.7,53.2],[24.2,53.5],[23.83,53.67],[23.6,54.0],[23.5,54.3]]},
+ {n:'Западная Двина',p:[[30.9,55.8],[30.5,55.4],[30.25,55.19],[30.0,55.3],[29.4,55.45],[28.76,55.48],[28.0,55.7],[27.3,55.85],[27.2,56.0]]},
+ {n:'Сож',p:[[32.6,54.5],[32.1,54.2],[31.7,53.8],[31.5,53.4],[31.2,53.0],[31.0,52.6],[30.97,52.44],[31.1,52.2],[31.35,51.85]]}
+];
+var BEL_LAK=[['Нарочь',26.85,54.85],['Дрисвяты',26.4,55.5],['Лукомское',29.1,54.7]];
+var BEL_CITY=[
+ ['Минск',27.57,53.90,'Минская'],['Гомель',30.97,52.44,'Гомельская'],['Могилёв',30.34,53.90,'Могилёвская'],
+ ['Витебск',30.25,55.19,'Витебская'],['Гродно',23.83,53.67,'Гродненская'],['Брест',23.73,52.10,'Брестская','L'],
+ ['Бобруйск',29.22,53.14,'Минская'],['Барановичи',26.01,53.13,'Минская'],['Пинск',26.11,52.12,'Брестская'],
+ ['Орша',30.41,54.51,'Витебская'],['Полоцк',28.76,55.48,'Витебская'],['Мозырь',29.27,52.05,'Гомельская'],
+ ['Лида',25.30,53.89,'Гродненская'],['Солигорск',27.53,52.83,'Минская'],['Жлобин',29.97,52.90,'Гомельская'],
+ ['Слуцк',27.55,53.03,'Минская'],['Речица',30.05,52.80,'Гомельская'],['Кобрин',24.29,52.21,'Брестская'],
+ ['Волковыск',24.47,53.16,'Гродненская'],['Дзержинск',27.14,53.83,'Минская','L']
+];
+var BEL_PEAK=['гора Дзержинская',27.09,53.85,358.6];
+
+/* ---- отрисовка карты мира ---- */
+function drawWorldBase(ctx,opts){
+  ctx.clearRect(0,0,WW,WH);
+  ctx.fillStyle='#d9ecfa'; ctx.fillRect(0,0,WW,WH);
+  function poly(pts,fill,stroke,lw){
+    ctx.beginPath();
+    pts.forEach(function(p,i){var X=wx(p[0]),Y=wy(p[1]); if(i===0)ctx.moveTo(X,Y); else ctx.lineTo(X,Y);});
+    ctx.closePath(); ctx.fillStyle=fill; ctx.fill();
+    if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=lw||1.2;ctx.stroke();}
+  }
+  LAND.forEach(function(L){poly(L.p,'#f8efdd','#96835f',1.3);});
+  SEA.forEach(function(S){poly(S.p,'#d9ecfa','#96835f',1.1);});
+  /* сетка 10° */
+  if(opts.grid!==false){
+    ctx.save(); ctx.strokeStyle='rgba(90,140,180,.55)'; ctx.lineWidth=1; ctx.font='700 10px "Segoe UI",sans-serif';
+    ctx.fillStyle='#3a6b85'; ctx.textAlign='center'; ctx.textBaseline='bottom';
+    for(var lon=-180;lon<=180;lon+=10){
+      ctx.beginPath(); ctx.moveTo(wx(lon),0); ctx.lineTo(wx(lon),WH); ctx.stroke();
+      if(lon%20===0&&lon!==180&&lon!==-180)ctx.fillText(String(lon)+'°',wx(lon)+16,WH-3);
+      if(lon%20===0&&lon!==180&&lon!==-180)ctx.fillText(String(lon)+'°',wx(lon)+16,12);
+    }
+    ctx.textAlign='left'; ctx.textBaseline='middle';
+    for(var lat=-80;lat<=80;lat+=10){
+      ctx.beginPath(); ctx.moveTo(0,wy(lat)); ctx.lineTo(WW,wy(lat)); ctx.stroke();
+      if(lat!==0)ctx.fillText(String(Math.abs(lat))+'°'+(lat>0?' с':' ю'),4,wy(lat)-7);
+    }
+    /* экватор и тропики */
+    ctx.strokeStyle='#d97b1f'; ctx.lineWidth=1.8; ctx.setLineDash([10,5]);
+    [23.5,-23.5].forEach(function(t){ctx.beginPath();ctx.moveTo(0,wy(t));ctx.lineTo(WW,wy(t));ctx.stroke();});
+    ctx.setLineDash([]);
+    ctx.strokeStyle='#1d6fb8'; ctx.lineWidth=2.4;
+    ctx.beginPath(); ctx.moveTo(0,wy(0)); ctx.lineTo(WW,wy(0)); ctx.stroke();
+    haloText(ctx,'0° экватор',76,wy(0)-11,'800 12px "Segoe UI",sans-serif','#1d6fb8');
+    haloText(ctx,'23,5° с.ш. (Рак)',wx(-150),wy(23.5)-9,'700 11px "Segoe UI",sans-serif','#d97b1f');
+    haloText(ctx,'23,5° ю.ш. (Козерог)',wx(-150),wy(-23.5)+9,'700 11px "Segoe UI",sans-serif','#d97b1f');
+    ctx.restore();
+  }
+  ctx.strokeStyle='#5b6b76'; ctx.lineWidth=2; ctx.strokeRect(1,1,WW-2,WH-2);
+}
+/* ---- отрисовка карты Беларуси ---- */
+function drawBelBase(ctx,opts){
+  ctx.clearRect(0,0,WW,WH);
+  ctx.fillStyle='#d9ecfa'; ctx.fillRect(0,0,WW,WH);
+  function line(pts,stroke,lw){
+    ctx.beginPath();
+    pts.forEach(function(p,i){var X=bx(p[0]),Y=by(p[1]); if(i===0)ctx.moveTo(X,Y); else ctx.lineTo(X,Y);});
+    ctx.strokeStyle=stroke; ctx.lineWidth=lw||1; ctx.stroke();
+  }
+  ctx.beginPath();
+  BEL_OUT.forEach(function(p,i){var X=bx(p[0]),Y=by(p[1]); if(i===0)ctx.moveTo(X,Y); else ctx.lineTo(X,Y);});
+  ctx.closePath(); ctx.fillStyle='#f8efdd'; ctx.fill(); ctx.strokeStyle='#7d6b4a'; ctx.lineWidth=2.4; ctx.stroke();
+  BEL_RIV.forEach(function(r){line(r.p,'#4fa3d6',2.6);});
+  BEL_LAK.forEach(function(l){
+    ctx.beginPath(); ctx.ellipse(bx(l[1]),by(l[2]),9,7,0,0,Math.PI*2);
+    ctx.fillStyle='#8fcdf0'; ctx.fill(); ctx.strokeStyle='#2f7fb5'; ctx.lineWidth=1.2; ctx.stroke();
+    haloText(ctx,l[0],bx(l[1]),by(l[2])-14,'700 11px "Segoe UI",sans-serif','#1d6fb8');
+  });
+  if(opts.grid!==false){
+    ctx.save(); ctx.strokeStyle='rgba(90,140,180,.5)'; ctx.lineWidth=1;
+    for(var lon=Math.ceil(BL.lon0);lon<=BL.lon1;lon++){
+      ctx.beginPath(); ctx.moveTo(bx(lon),0); ctx.lineTo(bx(lon),WH); ctx.stroke();
+      haloText(ctx,lon+'° в.д.',bx(lon),WH-14,'700 11px "Segoe UI",sans-serif','#3a6b85');
+      haloText(ctx,lon+'°',bx(lon),14,'700 11px "Segoe UI",sans-serif','#3a6b85');
+    }
+    for(var lat=Math.ceil(BL.lat0);lat<=BL.lat1;lat++){
+      ctx.beginPath(); ctx.moveTo(0,by(lat)); ctx.lineTo(WW,by(lat)); ctx.stroke();
+      haloText(ctx,lat+'° с.ш.',6,by(lat)-9,'700 11px "Segoe UI",sans-serif','#3a6b85');
+    }
+    ctx.restore();
+  }
+  /* города */
+  BEL_CITY.forEach(function(c){
+    var X=bx(c[1]),Y=by(c[2]);
+    ctx.beginPath(); ctx.arc(X,Y,c[0]==='Минск'?6:4,0,Math.PI*2);
+    ctx.fillStyle='#c22c2c'; ctx.fill(); ctx.strokeStyle='#fff'; ctx.lineWidth=1.6; ctx.stroke();
+    /* подпись слева — для городов, чьи названия упираются в соседа */
+    if(c[4]==='L')haloText(ctx,c[0],X-9,Y-8,'800 12px "Segoe UI",sans-serif','#7a2a1c','right');
+    else haloText(ctx,c[0],X+9,Y-8,'800 12px "Segoe UI",sans-serif','#7a2a1c','left');
+  });
+  /* высшая точка */
+  ctx.save();
+  ctx.strokeStyle='#6a2c00'; ctx.lineWidth=2.4;
+  ctx.beginPath(); ctx.moveTo(bx(BEL_PEAK[1]),by(BEL_PEAK[2])-9);
+  ctx.lineTo(bx(BEL_PEAK[1])+8,by(BEL_PEAK[2])+6); ctx.lineTo(bx(BEL_PEAK[1])-8,by(BEL_PEAK[2])+6);
+  ctx.closePath(); ctx.stroke(); ctx.restore();
+  haloText(ctx,'Дзержинская '+String(BEL_PEAK[3]).replace('.',',')+' м',
+    bx(BEL_PEAK[1])-13,by(BEL_PEAK[2])+26,'800 11.5px "Segoe UI",sans-serif','#6a2c00','right');
+  ctx.strokeStyle='#5b6b76'; ctx.lineWidth=2; ctx.strokeRect(1,1,WW-2,WH-2);
+}
+/* ================= РЕЖИМ «КОНТУРНАЯ КАРТА» ================= */
+var WP={tag:'wpTag',cnt:'wpCnt',prog:'wpProg',q:'wpQ',inp:'wpIn',check:'wpCheck',
+        fb:'wpFb',vd:'wpVd',fact:'wpFact',next:'wpNext'};
+var WMODE='world', W_OPTS={grid:true};
+var wTasks=[], wIdx=0, wRes=[], wCur=null, wLocked=false, wRevealed=false, wClick=null;
+var CONT_POOL=['Африка','Евразия','Северная Америка','Южная Америка','Австралия','Антарктида'];
+var OCEAN_POOL=['Тихий океан','Атлантический океан','Индийский океан','Северный Ледовитый океан','Южный океан'];
+var BEL_REG=['Минская','Брестская','Витебская','Гомельская','Гродненская','Могилёвская'];
+var WP2COS=Math.cos(54*Math.PI/180);
+
+function dLonLat(a,b,kx){
+  return Math.hypot(a[1]-b[1],(a[0]-b[0])*(kx||1));
+}
+function randLandPoint(rnd){
+  var i;
+  for(i=0;i<600;i++){
+    var n=pick(rnd,CONT_POOL), L=null;
+    for(var k=0;k<LAND.length;k++)if(LAND[k].n===n){L=LAND[k];break;}
+    if(!L)continue;
+    var xs=L.p.map(function(p){return p[0];}), ys=L.p.map(function(p){return p[1];});
+    var lon=Math.min.apply(null,xs)+rnd()*(Math.max.apply(null,xs)-Math.min.apply(null,xs));
+    var lat=Math.min.apply(null,ys)+rnd()*(Math.max.apply(null,ys)-Math.min.apply(null,ys));
+    if(!inPoly(lon,lat,L.p))continue;
+    if(seaAt(lon,lat))continue;
+    return [lon,lat];
+  }
+  return [10,23];
+}
+function randOpenSea(rnd){
+  for(var i=0;i<900;i++){
+    var lon=-180+rnd()*360, lat=-74+rnd()*146;
+    if(landAt(lon,lat)||seaAt(lon,lat))continue;
+    var o=oceanAt(lon,lat);
+    if(o==='Мировой океан')continue;
+    return [lon,lat];
+  }
+  return [-30,0];
+}
+function hFields(){
+  return [{lab:'Широта, °',ph:'60',max:3,num:true},{lab:'Полушарие (с/ю)',ph:'с',max:2},
+          {lab:'Долгота, °',ph:'40',max:3,num:true},{lab:'Полушарие (в/з)',ph:'в',max:2}];
+}
+function geoTest(lat,lon){
+  return function(v){
+    var la=parseFloat(String(v[0]||'').replace(',','.')), lo=parseFloat(String(v[2]||'').replace(',','.'));
+    var hs=nrm(v[1]), os=nrm(v[3]);
+    if(isNaN(la)||isNaN(lo))return false;
+    if(Math.abs(la-Math.abs(lat))>0.6)return false;
+    if(lat>=0?hs.indexOf('с')!==0:hs.indexOf('ю')!==0)return false;
+    if(Math.abs(lo-Math.abs(lon))>0.6)return false;
+    if(lon>=0?os.indexOf('в')!==0:os.indexOf('з')!==0)return false;
+    return true;
+  };
+}
+function geoAns(lat,lon){
+  return Math.abs(lat)+'° '+(lat>=0?'с.ш.':'ю.ш.')+', '+Math.abs(lon)+'° '+(lon>=0?'в.д.':'з.д.');
+}
+function genWorldTask(rnd,kind){
+  var t={kind:kind,tag:WMODE==='bel'?'Контурная карта Беларуси':'Контурная карта мира'};
+  if(kind==='wcoord'){
+    var lat=(rint(rnd,-5,7))*10, lon=(rint(rnd,-17,17))*10;
+    t.pt=[lon,lat];
+    t.q='Определите координаты пункта <b>А</b> на карте мира (через 10°).';
+    t.fields=hFields();
+    t.test=geoTest(lat,lon); t.display=geoAns(lat,lon);
+    t.fact='Точка А: <b>'+geoAns(lat,lon)+'</b>. Читаем ближайшие линии сетки: сначала широта (север/юг), затем долгота (восток/запад).';
+    return t;
+  }
+  if(kind==='wclick'){
+    var o=pick(rnd,WORLD_OBJ);
+    t.obj={name:o[0],lon:o[1],lat:o[2]};
+    t.q='Покажите на карте мира: <b>'+o[0]+'</b>.';
+    t.hint='<div class="sub">Кликните по нужному месту, затем нажмите «Проверить». Допуск — около 7°.</div>';
+    t.clickable=true;
+    t.fact='«'+o[0]+'» находится примерно в точке <b>'+geoAns(o[2],o[1])+'</b>.';
+    return t;
+  }
+  if(kind==='wopt'){
+    var useLand=rnd()<0.5, pt, ans;
+    if(useLand){pt=randLandPoint(rnd); ans=whereIs(pt[0],pt[1]);}
+    else{pt=randOpenSea(rnd); ans=whereIs(pt[0],pt[1]);}
+    if(CONT_POOL.indexOf(ans)<0&&OCEAN_POOL.indexOf(ans)<0) return genWorldTask(rnd,'wopt');
+    t.pt=pt;
+    t.q='Какой материк или океан расположен в точке <b>А</b>?';
+    var pool=CONT_POOL.concat(OCEAN_POOL), opts=[ans];
+    while(opts.length<4){var c=pick(rnd,pool); if(opts.indexOf(c)<0)opts.push(c);}
+    shuffleArr(opts,rnd);
+    t.options=opts; t.correct=opts.indexOf(ans);
+    t.fact='Точка А находится в: <b>'+ans+'</b>. Ориентируйтесь по сетке 10° и очертаниям материков.';
+    return t;
+  }
+  if(kind==='bcoord'){
+    var la=0,lo=0,i2;
+    for(i2=0;i2<300;i2++){
+      lo=rint(rnd,24,32); la=rint(rnd,52,56);
+      if(inPoly(lo,la,BEL_OUT))break;
+    }
+    if(!inPoly(lo,la,BEL_OUT)){lo=27;la=54;}
+    t.pt=[lo,la];
+    t.q='Определите координаты пункта <b>А</b> на карте Беларуси (сеть через 1°).';
+    t.fields=hFields();
+    t.test=geoTest(la,lo); t.display=geoAns(la,lo);
+    t.fact='Точка А: <b>'+geoAns(la,lo)+'</b>. На карте Беларуси сетка обычно через 1°, поэтому ответ — целые градусы.';
+    return t;
+  }
+  if(kind==='bclick'){
+    var sub=pick(rnd,['city','city','river','lake','peak']);
+    t.clickable=true;
+    if(sub==='city'){
+      var c2=BEL_CITY[rint(rnd,0,BEL_CITY.length-1)];
+      t.obj={name:'город '+c2[0],lon:c2[1],lat:c2[2]};
+      t.tol=0.55;
+      t.q='Покажите на карте Беларуси: <b>'+c2[0]+'</b>.';
+      t.fact='Город '+c2[0]+' — '+geoAns(c2[2],c2[1])+'. Областной центр: '+c2[3]+' область.';
+    } else if(sub==='river'){
+      var r2=BEL_RIV[rint(rnd,0,BEL_RIV.length-1)];
+      t.river=r2; t.obj={name:'река '+r2.n,lon:r2.p[2][0],lat:r2.p[2][1]}; t.tol=0.5;
+      t.q='Покажите на карте Беларуси: <b>реку '+r2.n+'</b>.';
+      t.fact='Река '+r2.n+' показана синей линией. Проверьте исток, направление течения и устье.';
+    } else if(sub==='lake'){
+      var l2=BEL_LAK[rint(rnd,0,BEL_LAK.length-1)];
+      t.obj={name:'озеро '+l2[0],lon:l2[1],lat:l2[2]}; t.tol=0.6;
+      t.q='Покажите на карте Беларуси: <b>озеро '+l2[0]+'</b>.';
+      t.fact='Озеро '+l2[0]+' лежит в '+ (l2[1]<27?'западной':'восточной') +' части страны: '+geoAns(l2[2],l2[1])+'.';
+    } else {
+      t.obj={name:BEL_PEAK[0],lon:BEL_PEAK[1],lat:BEL_PEAK[2]}; t.tol=0.5;
+      t.q='Покажите на карте Беларуси <b>высшую точку страны — гору Дзержинскую</b>.';
+      t.fact='Гора Дзержинская — '+String(BEL_PEAK[3]).replace('.',',')+' м, в Минской области ('+geoAns(BEL_PEAK[2],BEL_PEAK[1])+').';
+    }
+    t.hint='<div class="sub">Кликните по нужному месту, затем «Проверить».</div>';
+    return t;
+  }
+  if(kind==='bregion'){
+    var c3=BEL_CITY[rint(rnd,0,BEL_CITY.length-1)];
+    while(c3[0]==='Минск')c3=BEL_CITY[rint(rnd,0,BEL_CITY.length-1)];
+    t.q='В какой области Республики Беларусь расположен город <b>'+c3[0]+'</b>?';
+    var opts2=[c3[3]], pool2=BEL_REG.slice();
+    while(opts2.length<4){var cand=pick(rnd,pool2); if(opts2.indexOf(cand)<0)opts2.push(cand);}
+    shuffleArr(opts2,rnd);
+    t.options=opts2; t.correct=opts2.indexOf(c3[3]);
+    t.fact=c3[0]+' — город '+c3[3]+' области. Всего в Беларуси <b>6 областей</b> и столица Минск.';
+    return t;
+  }
+  if(kind==='bopt'){
+    var r3=BEL_RIV[rint(rnd,0,BEL_RIV.length-1)];
+    var seg=rint(rnd,0,r3.p.length-2), f=rnd();
+    var plon=r3.p[seg][0]+(r3.p[seg+1][0]-r3.p[seg][0])*f, plat=r3.p[seg][1]+(r3.p[seg+1][1]-r3.p[seg][1])*f;
+    t.pt=[plon,plat];
+    t.q='Что обозначено точкой <b>А</b> на карте Беларуси?';
+    var opts3=[r3.n], names=BEL_RIV.map(function(x){return x.n;});
+    while(opts3.length<4){var cc=pick(rnd,names); if(opts3.indexOf(cc)<0)opts3.push(cc);}
+    shuffleArr(opts3,rnd);
+    t.options=opts3; t.correct=opts3.indexOf(r3.n);
+    t.fact='Точка А стоит на реке <b>'+r3.n+'</b>. Следите за руслом: смотрите, где река берёт начало и куда течёт.';
+    return t;
+  }
+  return genWorldTask(rnd,'wcoord');
+}
+
+function drawWorldOverlay(ctx){drawWOverlayGen(ctx,wCur,WMODE,wRevealed,wClick);}
+function drawWOverlayGen(ctx,wCur,WMODE,wRevealed,wClick){
+  if(!wCur)return;
+  function px(lon,lat){return WMODE==='bel'?[bx(lon),by(lat)]:[wx(lon),wy(lat)];}
+  if(wCur.clickable){
+    if(wRevealed&&wCur.obj){
+      var T=px(wCur.obj.lon,wCur.obj.lat);
+      ctx.save(); ctx.beginPath(); ctx.arc(T[0],T[1],17,0,Math.PI*2);
+      ctx.fillStyle='rgba(46,184,74,.25)'; ctx.fill();
+      ctx.strokeStyle='#1c7a33'; ctx.lineWidth=3; ctx.stroke();
+      haloText(ctx,'✓',T[0],T[1],'900 17px "Segoe UI",sans-serif','#1c7a33');
+      ctx.restore();
+      if(wClick){
+        var C=px(wClick[0],wClick[1]);
+        dashedLine(ctx,C[0],C[1],T[0],T[1]);
+        markXY(ctx,C[0],C[1],'', '#e04040');
+        ctx.save(); ctx.beginPath(); ctx.arc(C[0],C[1],17,0,Math.PI*2);
+        ctx.strokeStyle='#e04040'; ctx.lineWidth=3; ctx.stroke(); ctx.restore();
+      }
+    } else if(wClick){
+      var C2=px(wClick[0],wClick[1]);
+      markXY(ctx,C2[0],C2[1],'А','#1c5d8a');
+      ctx.save(); ctx.beginPath(); ctx.arc(C2[0],C2[1],22,0,Math.PI*2);
+      ctx.strokeStyle='#1c5d8a'; ctx.lineWidth=2; ctx.setLineDash([5,5]); ctx.stroke();
+      ctx.setLineDash([]); ctx.restore();
+    }
+  } else if(wCur.pt){
+    var P=px(wCur.pt[0],wCur.pt[1]);
+    markXY(ctx,P[0],P[1],'А','#e04040');
+    if(wRevealed&&wCur.kind!=='wopt'&&wCur.kind!=='bopt'){
+      /* ничего лишнего — ответ уже в панели */
+    }
+  }
+}
+function drawWorldAll(){
+  var ctx=$('worldCv').getContext('2d');
+  if(WMODE==='bel')drawBelBase(ctx,{grid:W_OPTS.grid});
+  else drawWorldBase(ctx,{grid:W_OPTS.grid});
+  drawWorldOverlay(ctx);
+}
+var WORLD_KINDS=['wcoord','wclick','wopt','wcoord','wclick','wcoord','wopt','wclick','wopt','wcoord'];
+var BEL_KINDS=['bclick','bcoord','bregion','bclick','bopt','bcoord','bclick','bregion','bopt','bcoord'];
+function startWorldRound(){
+  var rnd=mulberry32(1+Math.floor(Math.random()*1e9));
+  var kinds=shuffleArr((WMODE==='bel'?BEL_KINDS:WORLD_KINDS).slice(),rnd);
+  wTasks=kinds.map(function(k){return genWorldTask(rnd,k);});
+  wIdx=0; wRes=[]; showWorldTask();
+}
+function showWorldTask(){
+  wCur=wTasks[wIdx]; wLocked=false; wRevealed=false; wClick=null;
+  panelShow(WP,wCur,wIdx,10,wRes);
+  $('worldCap').textContent=wCur.clickable
+    ? 'Кликните по карте, чтобы поставить отметку (затем «Проверить»).'
+    : (WMODE==='bel'?'Сетка через 1°.':'Сетка через 10°, пунктир — экватор и тропики.');
+  drawWorldAll();
+}
+function worldAnswer(shown){
+  if(wLocked)return;
+  var res;
+  if(wCur.clickable&&!wClick&&!shown){
+    res={ok:false,ans:'—',msg:'Сначала кликните по карте',fact:wCur.fact};
+    panelFb(WP,res); return;
+  }
+  if(shown){res={ok:false,ans:'—',msg:'Ответ показан — без очков',fact:wCur.fact};}
+  else{
+    var vals=readVals(wCur,$(WP.inp));
+    if(wCur.fields&&vals.every(function(v){return String(v).trim()===''})){
+      res={ok:false,ans:'—',msg:'Введите ответ',fact:wCur.fact};
+    } else if(wCur.clickable){
+      var ok=false;
+      if(wCur.river){
+        var best=1e9;
+        for(var i=0;i<wCur.river.p.length-1;i++){
+          var p=wCur.river.p[i],q=wCur.river.p[i+1];
+          var t=clamp(((wClick[0]-p[0])*(q[0]-p[0])+(wClick[1]-p[1])*(q[1]-p[1]))/
+            (Math.pow(q[0]-p[0],2)+Math.pow(q[1]-p[1],2)||1),0,1);
+          var lo2=p[0]+(q[0]-p[0])*t, la2=p[1]+(q[1]-p[1])*t;
+          var d=dLonLat([wClick[0],wClick[1]],[lo2,la2],WP2COS);
+          if(d<best)best=d;
+        }
+        ok=best<=0.45;
+      } else {
+        ok=dLonLat(wClick,[wCur.obj.lon,wCur.obj.lat],WP2COS)<=(wCur.tol||7);
+      }
+      res={ok:ok,ans:wCur.obj?wCur.obj.name:'—',
+           fact:(ok?'Отметка стоит в нужном месте. ':'Отметка стояла не там. ')+wCur.fact};
+      wRevealed=true;
+    } else {
+      res=evalTask(wCur,vals);
+    }
+  }
+  wLocked=true; wRevealed=true;
+  wRes[wIdx]=res.ok?1:0;
+  if(res.ok)addScore(5);
+  panelFb(WP,res);
+  progDots($(WP.prog),10,wIdx,wRes);
+  drawWorldAll();
+}
+function worldNext(){
+  if(!wLocked)return;
+  wIdx++;
+  if(wIdx>=10){finishMapRound();return;}
+  showWorldTask();
+}
+function finishMapRound(){
+  var ok=wRes.filter(function(v){return v;}).length;
+  var title=WMODE==='bel'?'Карта Беларуси':'Карта мира';
+  openModal(
+    '<span class="bigEmoji">'+(ok>=9?'🏆':ok>=7?'🌟':ok>=5?'👍':'📖')+'</span>'+
+    '<h1>'+title+': готово</h1>'+
+    '<div class="scoreLine">Верно '+ok+' из 10 · +'+(ok*5)+' очков</div>'+
+    '<p>На реальном ЦТ работа с контурной картой мира — задание №1 (10 баллов), с картой Беларуси — отдельное задание (10 баллов).</p>'+
+    '<div class="chips"><span class="chip">координаты</span><span class="chip">материки и океаны</span>'+
+    '<span class="chip">объекты</span><span class="chip">города и реки</span></div>'+
+    '<div class="secBtns">'+
+    '<button class="btn" data-act="worldAgain">🔄 Ещё 10 заданий</button>'+
+    (WMODE==='world'?'<button class="btn green" data-act="toBel">🇧🇾 Перейти к карте Беларуси</button>':
+                      '<button class="btn green" data-act="toWorld">🌍 Перейти к карте мира</button>')+
+    '<button class="btn ghost" data-act="close">Закрыть</button></div>');
+}
+/* ================= ГЕОГРАФИЧЕСКИЙ ДИКТАНТ (30 ответов) ================= */
+var DICT=[
+ {q:'Площадь поверхности Земли — <b>___</b> млн км².',a:'510',
+  f:'510 млн км² (по данным современных измерений — около 510,1 млн км²).'},
+ {q:'Длина окружности экватора — <b>___</b> км.',a:'40000',alts:['40 000'],
+  f:'Около 40 000 км: это базовая цифра для расчёта градусной длины (1° ≈ 111 км).'},
+ {q:'Масштаб карты 1:25 000. Сколько метров обозначает 1 см на карте? <b>___</b> м.',a:'250',
+  f:'25 000 см = 250 м. Значит 1 см → 250 м, а 1 мм → 25 м.'},
+ {q:'Крупнейшее болото Европы — <b>___</b> болото.',a:'припятское',alts:['припятский'],
+  f:'Припятское болото в бассейне реки Припяти (Беларусь и Украина) — крупнейшее в Европе.'},
+ {q:'Часовых поясов на Земле — <b>___</b>.',a:'24',
+  f:'24 пояса по 15° долготы: 360° ÷ 15° = 24 часа — точно столько в сутках.'},
+ {q:'Длина дуги 1° меридиана приблизительно равна <b>___</b> км.',a:'111',
+  f:'≈ 111 км (111,3 км). Отсюда и «40 000 км ÷ 360° = 111 км».'},
+ {q:'Самая высокая гора на Земле — <b>___</b>.',a:'эверест',alts:['джомолунгма'],
+  f:'Эверест (Джомолунгма) в Гималаях, 8848,86 м.'},
+ {q:'Высота Джомолунгмы (Эвереста) — <b>___</b> м.',a:'8848',alts:['8849','884886','8848,86'],
+  f:'8848,86 м; в учебниках встречается округление 8848 м.'},
+ {q:'Самое глубокое озеро мира — <b>___</b>.',a:'байкал',
+  f:'Байкал, глубина 1642 м, около 20 % мировых запасов пресной воды.'},
+ {q:'Крупнейшее по площади озеро мира — <b>___</b>.',a:'каспийское',
+  f:'Каспийское море-озеро: площадь около 376 тыс. км².'},
+ {q:'Самая полноводная река мира — <b>___</b>.',a:'амазонка',
+  f:'Амазонка несёт около 20 % всей речной воды планеты.'},
+ {q:'Крупнейший по площади остров мира — <b>___</b>.',a:'гренландия',
+  f:'Гренландия — 2,17 млн км², 80 % территории покрыто льдом.'},
+ {q:'Крупнейший по площади полуостров мира — <b>___</b>.',a:'аравийский',
+  f:'Аравийский полуостров, около 3 млн км² (полуостров Индостан — второй).'},
+ {q:'Самая большая горячая пустыня мира — <b>___</b>.',a:'сахара',
+  f:'Сахара — около 9 млн км², лежит в тропическом и субтропическом поясах Африки.'},
+ {q:'Самая высокая горная система мира — <b>___</b>.',a:'гималаи',
+  f:'Гималаи: высшая точка — Эверест (8848,86 м).'},
+ {q:'Высшая точка Африки — <b>___</b>.',a:'килиманджаро',
+  f:'Килиманджаро, 5895 м, стратовулкан в Танзании.'},
+ {q:'Высшая точка Южной Америки — <b>___</b>.',a:'аконкагуа',
+  f:'Аконкагуа в Кордильерах, 6961 м (Аргентина).'},
+ {q:'Самый большой по площади океан — <b>___</b>.',a:'тихий',
+  f:'Тихий океан — 178,7 млн км², больше площади всех материков вместе.'},
+ {q:'Столица Австралии — <b>___</b>.',a:'канберра',
+  f:'Канберра — компромиссный вариант в споре Сиднея и Мельбурна.'},
+ {q:'Столица Канады — <b>___</b>.',a:'оттава',
+  f:'Оттава, провинция Онтаро.'},
+ {q:'Страна с самой большой площадью в мире — <b>___</b>.',a:'россия',
+  f:'17,1 млн км², страна в Восточной Европе и Северной Азии.'},
+ {q:'На каком материке расположена пустыня Сахара? <b>___</b>.',a:'африка',
+  f:'Сахара занимает северную часть Африки.'},
+ {q:'Эверест расположен на границе Непала и <b>___</b>.',a:'китай',alts:['кнр'],
+  f:'Граница Непала и Китая (Тибет), хребет Махалангур-Химал.'},
+ {q:'Море, к которому ближе всего расположена Беларусь, — <b>___</b>.',a:'балтийское',
+  f:'До Балтики около 250 км от западной границы Беларуси (нет выхода к морю).'},
+ {q:'Река, протекающая по территории столицы Беларуси, — <b>___</b>.',a:'свислочь',
+  f:'Свислочь, длина около 72 км, вдоль неё — набережная Минска.'},
+ {q:'Самая длинная река Беларуси — <b>___</b>.',a:'днепр',
+  f:'Днепр протекает по Беларуси на 1130 км.'},
+ {q:'Самое большое по площади озеро Беларуси — <b>___</b>.',a:'нарочь',
+  f:'Озеро Нарочь, 79,2 км², озёрный край (Минская область).'},
+ {q:'Высшая точка Беларуси — <b>___</b>.',a:'дзержинская',alts:['гора дзержинская'],
+  f:'Гора Дзержинская,358,6 м, в Минской области.'},
+ {q:'Высота высшей точки Беларуси — <b>___</b> м.',a:'358',alts:['3586','358,6'],
+  f:'358,6 м (в источниках встречаются 358,4 и 358,6 м).'},
+ {q:'Областей в Республике Беларусь — <b>___</b>.',a:'6',
+  f:'Брестская, Витебская, Гомельская, Гродненская, Минская, Могилёвская.'}
+];
+
+/* ================= БАНК ТЕСТА (для варианта ЦТ) ================= */
+var TEST=[
+ {q:'Страна с самой большой площадью в мире:',a:['Россия','Канада','Китай','США'],c:0,f:'17,1 млн км².'},
+ {q:'Столица Австралии:',a:['Сидней','Мельбурн','Канберра','Перт'],c:2,f:'Канберра основан как компромиссный вариант.'},
+ {q:'Самая высокая гора на Земле:',a:['Килиманджаро','Эверест','Эльбрус','Аконкагуа'],c:1,f:'8848,86 м, Гималаи.'},
+ {q:'Самое глубокое озеро мира:',a:['Ладожское','Танганьика','Байкал','Каспийское'],c:2,f:'1642 м, около 20 % пресной воды Земли.'},
+ {q:'Единственное море без берегов, ограниченное течениями:',a:['Красное','Мраморное','Балтийское','Саргассово'],c:3,f:'Саргассово море в Атлантике.'},
+ {q:'Высшая точка Европы:',a:['Монблан','Эльбрус','Кавказский хребет','Арарат'],c:1,f:'Эльбрус, 5642 м, Боковой хребет Большого Кавказа.'},
+ {q:'Самая полноводная (по стоку) река Африки:',a:['Нил','Конго','Замбези','Нигер'],c:1,f:'Конго — вторая по стоку река мира после Амазонки.'},
+ {q:'Областей в Республике Беларусь:',a:['5','6','7','8'],c:1,f:'Шесть областей и столица — Минск.'},
+ {q:'Высшая точка Беларуси:',a:['Гора Лысая','Гора Клетенская','Гора Дзержинская','Гора Высокая'],c:2,f:'358,6 м, Минская область.'},
+ {q:'Самое большое озеро Беларуси:',a:['Чёрное','Волчье','Нарочь','Лукомское'],c:2,f:'Нарочь, 79,2 км².'},
+ {q:'В какое море впадает Нёман?',a:['Балтийское (Куршский залив)','Чёрное','Азовское','Белое'],c:0,f:'Нёман впадает в Куршский залив Балтийского моря.'},
+ {q:'В какое море (залив) впадает Западная Двина?',a:['Балтийское','Чёрное','Каспийское','Средиземное'],c:0,f:'Рижский залив Балтийского моря.'},
+ {q:'Самая длинная река Беларуси:',a:['Нёман','Припять','Березина','Днепр'],c:3,f:'Днепр — 1130 км по территории Беларуси.'},
+ {q:'Крупнейшее болото Европы находится в Беларуси. Это…',a:['Припятское','ДROLSK','Ольманское? ','Верхнее'],c:0,f:'Припятское болото в бассейне Припяти.'},
+ {q:'Какой климат у экватора?',a:['Умеренный морской','Экваториальный (жаркий и влажный круглый год)','Континентальный','Субтропический'],c:1,f:'Температура +25…+30 °C круглый год, обильные осадки.'},
+ {q:'Природная зона, занимающая большую часть Беларуси:',a:['Тайга','Смешанные леса','Саванна','Степь'],c:1,f:'Смешанные леса — около 40 % территории.'},
+ {q:'Пассаты — это…',a:['Переменные ветры побережий','Постоянные ветры из субтропиков к экватору','Горные долины','Штормовые ветры'],c:1,f:'Постоянные ветры обоих полушарий, дующие к экватору.'},
+ {q:'Какая река несёт больше всех пресной воды?',a:['Нил','Амазонка','Янцзы','Волга'],c:1,f:'Около 20 % всей речной воды планеты.'},
+ {q:'Какой материк омывают четыре океана (Тихий, Атлантический, Индийский и Северный Ледовитый)?',a:['Африка','Северная Америка','Евразия','Австралия'],c:2,f:'Только Евразия омывается всеми четырьмя.'},
+ {q:'Река, протекающая по территории Каира:',a:['Конго','Нил','Замбези','Тигр'],c:1,f:'Каир расположен на Ниле.'},
+ {q:'Столица Бразилии:',a:['Рио-де-Жанейро','Сан-Паулу','Бразилиа','Салвадор'],c:2,f:'Бразилиа — специально построенная столица (1960 г.).'},
+ {q:'Страна, территория которой расположена на двух континентах (Европе и Азии):',a:['Германия','Франция','Турция','Испания'],c:2,f:'Болгария, Турция, Россия, Казахстан, Египет — но в списке только Турция.'},
+ {q:'Самая большая горячая пустыня мира:',a:['Гоби','Калахари','Атакама','Сахара'],c:3,f:'Около 9 млн км² в Северной Африке.'},
+ {q:'Самая глубокая впадина Мирового океана:',a:['Филиппинская','Марианский жёлоб','Тонга','Пуэрто-Рико'],c:1,f:'11 034 м (жёлоб Челленджер).'},
+ {q:'Крупнейший в мире коралловый риф находится у берегов…',a:['Египта','Индонезии','Австралии','Мадагаскара'],c:2,f:'Большой Барьерный риф, 2300 км.'},
+ {q:'Что такое дельта реки?',a:['Устье, разбитое на рукава','Исток реки','Приток реки','Водопад в устье'],c:0,f:'Низменность в устье, расчленённая рукавами и протоками.'},
+ {q:'Приток реки — это…',a:['Река, впадающая в другую реку','Место впадения в море','Начало реки','Озеро в пойме'],c:0,f:'Притоки собирают воду с всего бассейна.'},
+ {q:'Крупнейшая река, впадающая в Чёрное море:',a:['Дон','Волга','Днепр','Западная Двина'],c:2,f:'Днепр впадает в Чёрное море; Дон — в Азовское, Волга — в Каспий.'},
+ {q:'Эрозия — это…',a:['Поднятие земной коры','Разрушение почвы водой и ветром','Замерзание озера','Выветривание горных пород на морозе'],c:1,f:'Из-за эрозии растут овраги, смывается плодородный слой.'},
+ {q:'Узкая долина между высокими горами называется…',a:['Низина','Ущелье','Плато','Дельта'],c:1,f:'Ущелье — крутоствольная долина, часто с рекой на дне.'},
+ {q:'Крупнейшая по площади страна Азии:',a:['Китай','Индия','Индонезия','Саудовская Аравия'],c:0,f:'Китай — 9,6 млн км².'},
+ {q:'Столица Канады:',a:['Торонто','Монреаль','Ванкувер','Оттава'],c:3,f:'Оттава, провинция Онтаро.'},
+ {q:'Саванна — это…',a:['Зона высокой травы с редкими деревьями','Вечнозелёный лес','Пустыня','Тундра'],c:0,f:'Сухой и влажный сезон, высокая трава, баобабы.'},
+ {q:'Какой океан самый большой и глубокий?',a:['Атлантический','Индийский','Тихий','Северный Ледовитый'],c:2,f:'178,7 млн км², Марианская впадина.'},
+ {q:'Столица Египта:',a:['Александрия','Каир','Луксор','Асуан'],c:1,f:'Каир — крупнейший город Африки.'},
+ {q:'Глобус — это…',a:['Плоская карта мира','Модель Земли в уменьшенном виде','Атлас','Компас'],c:1,f:'Единственная модель Земли без искажений формы.'},
+ {q:'Прибор для определения сторон света:',a:['Барометр','Термометр','Компас','Анемометр'],c:2,f:'Стрелка компаса указывает на магнитный север.'},
+ {q:'Гималаи расположены…',a:['на границе Индии и Китая','в Африке','в Южной Америке','на острове Ява'],c:0,f:'Хребты на севере Индии, Непала и Тибета.'},
+ {q:'Река, впадающая в Каспийское море:',a:['Волга','Днепр','Обь','Лена'],c:0,f:'Волга — крупнейшая река Европы, впадает в Каспий.'},
+ {q:'Высшая точка Северной Америки:',a:['Мак-Кинли (Денали)','Монблан','Логан','Пик Пунчо'],c:0,f:'Денали, 6194 м, Аляска.'},
+ {q:'В какой горной системе находится высшая точка Европы?',a:['Альпы','Урал','Кавказ','Карпаты'],c:2,f:'Кавказ, Эльбрус 5642 м.'},
+ {q:'Торф — это…',a:['Остатки растений, не до конца перепревшие в воде','Вид минерального топлива','Песчаник','Вулканическая зола'],c:0,f:'Образуется в болотах из мхов и трав.'},
+ {q:'Часовых поясов проходит через территорию России:',a:['9','11','12','14'],c:1,f:'11 поясов: от 1-го до 11-го.'},
+ {q:'Место, где река впадает в море или озеро, называется…',a:['Исток','Приток','Устье','Порог'],c:2,f:'Устье — «рот» реки.'},
+ {q:'Высшая точка Австралии:',a:['Косцюшко (2228 м)','Эльбрус','Эверест','Арарат'],c:0,f:'Гора Косцюшко в Австралийских Альпах.'},
+ {q:'Какое море разделяет Европу и Африку?',a:['Чёрное','Красное','Балтийское','Средиземное'],c:3,f:'Средиземное море, площадь 2,5 млн км².'},
+ {q:'Река, протекающая по столице России:',a:['Ока','Москва-река','Нева','Волга'],c:1,f:'Москва-река, приток Оки.'},
+ {q:'Азимут — это…',a:['Угол от направления на север по часовой стрелке до направления на объект','Расстояние в километрах','Высота точки','Масштаб карты'],c:0,f:'0° — север, 90° — восток, 180° — юг, 270° — запад.'},
+ {q:'Сколько стран граничит с Республикой Беларусь?',a:['3','4','5','6'],c:2,f:'Россия, Украина, Польша, Литва, Латвия.'},
+ {q:'Крупнейший город Беларуси:',a:['Гомель','Могилёв','Минск','Витебск'],c:2,f:'Минск — около 2 млн жителей.'},
+ {q:'Линия на карте, соединяющая точки с одинаковой высотой, называется…',a:['Изотерма','Горизонталь','Изобара','Исохрона'],c:1,f:'Горизонтали (изогипсы), контурное расстояние — разница высот.'},
+ {q:'Самая длинная река Азии:',a:['Янцзы','Меконг','Иравади','Ганг'],c:0,f:'Янцзы, около 6300 км.'},
+ {q:'Столица Японии:',a:['Осака','Киото','Токио','Нагоя'],c:2,f:'Токио, остров Хонсю.'},
+ {q:'Какой материк расположен в основном в Северном полушарии и полностью в Восточном?',a:['Африка','Евразия','Северная Америка','Южная Америка'],c:1,f:'Еврасия целиком к востоку от 20° з.д.'},
+ {q:'Что показывает изогипса (горизонталь)?',a:['Одинаковую высоту местности','Одинаковую температуру','Одинаковое давление','Направление ветра'],c:0,f:'Все точки линии имеют одну и ту же высоту.'},
+ {q:'Какая река протекает через Слоним, Гродно и впадает в Куршский залив?',a:['Щара','Нёман','Западная Двина','Березина'],c:1,f:'Нёман — одна из главных рек Западной Беларуси.'},
+ {q:'Наибольшая (крупнейшая) низменность Беларуси:',a:['Белорусская равнина','Полесская низина','Приднепровская низина','Подольская'],c:0,f:'Белорусская равнина занимает около 70 % территории.'}
+];
+/* убираем явные опечатки в банке */
+TEST[13].a=['Припятское','Верхнее','Дикое','Осиновое']; TEST[13].c=0;
+TEST[21].f='Турция (Стамбул) лежит на стыке Европы и Азии.';
+
+/* ================= ЭКРАН ДИКТАНТА ================= */
+var dictIdx=0, dictRes=[], dictLocked=false;
+function renderDictDots(){
+  var h='';
+  for(var i=0;i<30;i++){
+    var cls=dictRes[i]===undefined?'':(dictRes[i]?'ok':'bad');
+    if(i===dictIdx)cls+=' on';
+    h+='<i class="'+cls+'">'+(i+1)+'</i>';
+  }
+  $('dcDots').innerHTML=h;
+}
+function startDict(){dictIdx=0;dictRes=[];showDict();}
+function showDict(){
+  dictLocked=false;
+  renderDictDots();
+  $('dcCnt').textContent='Ответ '+(dictIdx+1)+' из 30 · '+dictRes.filter(function(v){return v;}).length+' верных';
+  $('dcQ').innerHTML='<b>'+(dictIdx+1)+'.</b> '+DICT[dictIdx].q;
+  $('dcIn').value='';
+  $('dcCheck').style.display='';
+  $('dcNext').style.display='none';
+  $('dcFb').className='fb';
+  setTimeout(function(){$('dcIn').focus();},20);
+}
+function dictAnswer(){
+  if(dictLocked)return;
+  var v=$('dcIn').value, it=DICT[dictIdx];
+  var ok=nrm(v)===nrm(it.a);
+  if(!ok&&it.alts)ok=it.alts.some(function(x){return nrm(x)===nrm(v);});
+  if(nrm(v)===''){ $('dcVd').className='verdict no'; $('dcVd').textContent='❌ Введите ответ';
+    $('dcFact').innerHTML=it.f; $('dcFb').className='fb show'; return; }
+  dictLocked=true;
+  dictRes[dictIdx]=ok?1:0;
+  if(ok)addScore(1);
+  $('dcVd').className='verdict '+(ok?'ok':'no');
+  $('dcVd').textContent=ok?'✅ Верно!':('❌ Неверно — правильный ответ: '+it.a.charAt(0).toUpperCase()+it.a.slice(1));
+  $('dcFact').innerHTML=it.f;
+  $('dcFb').className='fb show';
+  $('dcCheck').style.display='none';
+  $('dcNext').style.display='';
+  renderDictDots();
+  $('dcCnt').textContent='Ответ '+(dictIdx+1)+' из 30 · '+dictRes.filter(function(v){return v;}).length+' верных';
+}
+function dictNext(){
+  if(!dictLocked)return;
+  dictIdx++;
+  if(dictIdx>=30){finishDict();return;}
+  showDict();
+}
+function finishDict(){
+  var ok=dictRes.filter(function(v){return v;}).length;
+  var pts=Math.round(ok/3*10)/10;
+  if(pts>(ST.bestDict||0)){ST.bestDict=pts;saveST();}
+  openModal(
+    '<span class="bigEmoji">'+(ok>=27?'🏆':ok>=23?'🌟':ok>=18?'👍':'📖')+'</span>'+
+    '<h1>Географический диктант</h1>'+
+    '<div class="scoreLine">Верных ответов: '+ok+' из 30 → <b>'+String(pts).replace('.',',')+'</b> из 10 баллов</div>'+
+    '<div class="rank">Лучший результат: '+String(ST.bestDict).replace('.',',')+'/10</div>'+
+    '<p>Каждый верный ответ = 1/3 балла. Пишите ответы полностью: без сокращений и точек на конце.</p>'+
+    '<div class="secBtns">'+
+    '<button class="btn" data-act="dictAgain">✍️ Пройти диктант заново</button>'+
+    '<button class="btn green" data-act="toVariant">🧪 Перейти к варианту ЦТ</button>'+
+    '<button class="btn ghost" data-act="close">Закрыть</button></div>');
+}
+/* ================= ВАРИАНТ ЦТ (100 БАЛЛОВ) ================= */
+var PV={tag:'vTag',cnt:'vCnt',prog:'vProg',q:'vQ',inp:'vIn',check:'vCheck',
+        fb:'vFb',vd:'vVd',fact:'vFact',next:'vNext'};
+var VSEC=[
+  {name:'Задание 1 · Контурная карта мира',pts:1,max:10},
+  {name:'Задание 2 · Топографическая карта 1:25 000',pts:2,max:20},
+  {name:'Задание 3 · Контурная карта Беларуси',pts:1,max:10},
+  {name:'Задание 4 · Географический диктант',pts:1/3,max:10},
+  {name:'Задание 5 · Тест',pts:1,max:50}
+];
+var vItems=[], vIdx=0, vRes=[], vPts=[], vCur=null, vLocked=false, vRevealed=false, vClick=null;
+
+function dictTest(d){
+  return function(v){
+    var s=nrm(v&&v[0]);
+    if(!s)return false;
+    if(s===nrm(d.a))return true;
+    if(d.alts)return d.alts.some(function(x){return nrm(x)===s;});
+    return false;
+  };
+}
+function startVariant(){
+  var rnd=mulberry32(1+Math.floor(Math.random()*1e9));
+  vItems=[];
+  shuffleArr(WORLD_KINDS.slice(),rnd).forEach(function(k){
+    var t=genWorldTask(rnd,k);
+    t.tag=VSEC[0].name;
+    vItems.push({task:t,mapType:'world',sec:0});
+  });
+  if(!TOPOMAP)newTopoMap();
+  if(!TOPOMAP.base)renderTopoBase(TOPOMAP);
+  shuffleArr(TOPO_KINDS.slice(),rnd).forEach(function(k){
+    var t=genTopoTask(TOPOMAP,rnd,k);
+    t.tag=VSEC[1].name;
+    vItems.push({task:t,mapType:'topo',sec:1});
+  });
+  shuffleArr(BEL_KINDS.slice(),rnd).forEach(function(k){
+    var t=genWorldTask(rnd,k);
+    t.tag=VSEC[2].name;
+    vItems.push({task:t,mapType:'bel',sec:2});
+  });
+  var dIdx=DICT.map(function(_,i){return i;});
+  shuffleArr(dIdx,rnd).forEach(function(i,n){
+    var d=DICT[i];
+    vItems.push({mapType:null,sec:3,task:{
+      kind:'dict', tag:VSEC[3].name,
+      q:'<b>Диктант, ответ '+(n+1)+' из 30.</b><br>'+d.q,
+      fields:[{lab:'Ответ (буквы или цифры)',ph:'введите ответ'}],
+      test:dictTest(d),
+      display:d.a.charAt(0).toUpperCase()+d.a.slice(1),
+      fact:d.f
+    }});
+  });
+  var tIdx=TEST.map(function(_,i){return i;});
+  shuffleArr(tIdx,rnd).slice(0,50).forEach(function(i){
+    var q=TEST[i];
+    vItems.push({mapType:null,sec:4,task:{
+      kind:'test', tag:VSEC[4].name, q:q.q,
+      options:q.a, correct:q.c, display:q.a[q.c], fact:q.f
+    }});
+  });
+  vIdx=0; vRes=[]; vPts=[];
+  showVarTask();
+}
+function showVarTask(){
+  vCur=vItems[vIdx]; vLocked=false; vRevealed=false; vClick=null;
+  var sec=VSEC[vCur.sec];
+  var inSec=vItems.filter(function(x){return x.sec===vCur.sec;});
+  var pos=inSec.indexOf(vCur)+1;
+  var dots=inSec.map(function(x){return vRes[vItems.indexOf(x)];});
+  panelShow(PV,vCur.task,pos-1,inSec.length,dots);
+  $(PV.cnt).textContent='вопрос '+pos+' из '+inSec.length+' · максимум за задание: '+
+    (sec.max===10&&vCur.sec===3?'10':sec.max)+' баллов';
+  drawVarAll();
+  var inp=$(PV.inp).querySelector('input');
+  if(inp)setTimeout(function(){inp.focus();},30);
+}
+function drawVarAll(){
+  var cv=$('varCv'), ctx=cv.getContext('2d');
+  if(!vCur||!vCur.mapType){$('varMapWrap').style.display='none';return;}
+  $('varMapWrap').style.display='';
+  if(vCur.mapType==='topo'){
+    cv.width=PW; cv.height=PW;
+    ctx.drawImage(TOPOMAP.base,0,0);
+    if(TOP_OPTS.grid)drawKmGrid(ctx,TOPOMAP);
+    drawTopoOverlay(ctx,TOPOMAP,vCur.task,vRevealed);
+  } else {
+    cv.width=WW; cv.height=WH;
+    if(vCur.mapType==='bel')drawBelBase(ctx,{grid:true});
+    else drawWorldBase(ctx,{grid:true});
+    drawWOverlayGen(ctx,vCur.task,vCur.mapType,vRevealed,vClick);
+  }
+  $('varCap').textContent=vCur.mapType==='topo'
+    ? 'Масштаб 1:25 000. Сторона квадрата сетки — 1 км.'
+    : (vCur.mapType==='bel'?'Карта Беларуси, сетка через 1°.':'Карта мира, сетка через 10°.');
+}
+function variantCheck(){
+  if(vLocked||!vCur)return;
+  var t=vCur.task, res, i;
+  var clickable=(t.kind==='wclick'||t.kind==='bclick');
+  if(clickable){
+    if(!vClick){
+      panelFb(PV,{ok:false,ans:'—',msg:'Сначала кликните по карте',fact:t.fact});
+      return;
+    }
+    var ok=false;
+    if(t.river){
+      var best=1e9;
+      for(i=0;i<t.river.p.length-1;i++){
+        var p=t.river.p[i],q=t.river.p[i+1];
+        var tt=clamp(((vClick[0]-p[0])*(q[0]-p[0])+(vClick[1]-p[1])*(q[1]-p[1]))/
+          (Math.pow(q[0]-p[0],2)+Math.pow(q[1]-p[1],2)||1),0,1);
+        var lo=p[0]+(q[0]-p[0])*tt, la=p[1]+(q[1]-p[1])*tt;
+        var d=dLonLat(vClick,[lo,la],WP2COS);
+        if(d<best)best=d;
+      }
+      ok=best<=0.45;
+    } else {
+      ok=dLonLat(vClick,[t.obj.lon,t.obj.lat],WP2COS)<=(t.tol||7);
+    }
+    res={ok:ok,ans:t.obj?t.obj.name:'—',
+         fact:(ok?'Отметка стоит в нужном месте. ':'Отметка стояла не там. ')+t.fact};
+  } else if(t.fields){
+    var vals=readVals(t,$(PV.inp));
+    if(vals.every(function(v){return String(v).trim()===''})){
+      res={ok:false,ans:t.display||'—',msg:'Введите ответ',fact:t.fact};
+    } else {
+      res=evalTask(t,vals);
+    }
+  } else {
+    var sel=readVals(t,$(PV.inp));
+    if(sel<0){panelFb(PV,{ok:false,ans:'—',msg:'Выберите вариант ответа',fact:t.fact});return;}
+    res=evalTask(t,sel);
+  }
+  vLocked=true; vRevealed=true;
+  var pts=res.ok?VSEC[vCur.sec].pts:0;
+  vPts[vIdx]=pts; vRes[vIdx]=res.ok?1:0;
+  if(res.ok)addScore(1);
+  panelFb(PV,res);
+  var inSec=vItems.filter(function(x){return x.sec===vCur.sec;});
+  progDots($(PV.prog),inSec.length,inSec.indexOf(vCur),
+    inSec.map(function(x){return vRes[vItems.indexOf(x)];}));
+  drawVarAll();
+}
+function varNext(){
+  if(!vLocked)return;
+  vIdx++;
+  if(vIdx>=vItems.length){finishVariant();return;}
+  showVarTask();
+}
+function finishVariant(){
+  var sums=[0,0,0,0,0];
+  vItems.forEach(function(it,i){sums[it.sec]+=vPts[i]||0;});
+  var total=sums.reduce(function(a,b){return a+b;},0);
+  var rounded=Math.round(total);
+  if(rounded>(ST.bestVar||0)){ST.bestVar=rounded;saveST();}
+  addScore(rounded);
+  var rank=rounded>=85?'🏆 Отлично! Уверенный уровень':
+           rounded>=70?'🌟 Хорошо — база есть, доведите детали':
+           rounded>=55?'👍 Неплохо для начала — повторите слабые разделы':
+           rounded>=40?'📖 Нужна доработка — начните со справки и тренажёров':
+                        '📖 Пройдите справку и по одному тренажёру каждого типа';
+  var rows=[
+    ['1. Контурная карта мира',sums[0],10],
+    ['2. Топографическая карта',Math.round(sums[1]*10)/10,20],
+    ['3. Контурная карта Беларуси',sums[2],10],
+    ['4. Географический диктант',Math.round(sums[3]*10)/10,10],
+    ['5. Тест',sums[4],50]
+  ].map(function(r){
+    return '<tr><td>'+r[0]+'</td><td>'+String(Math.round(r[1]*10)/10).replace('.',',')+' / '+r[2]+'</td></tr>';
+  }).join('');
+  openModal(
+    '<span class="bigEmoji">'+(rounded>=85?'🏆':rounded>=70?'🌟':rounded>=55?'👍':'📖')+'</span>'+
+    '<h1>Вариант завершён</h1>'+
+    '<div class="scoreLine">Результат: <b>'+rounded+'</b> из 100 баллов</div>'+
+    '<div class="rank">'+rank+'</div>'+
+    '<table class="ct">'+rows+'</table>'+
+    '<p>Лучший вариант: '+ST.bestVar+'/100. На реальном ЦТ время на работу — около 2,5 часов, следите за темпом.</p>'+
+    '<div class="chips"><span class="chip">карта мира</span><span class="chip">топокарта</span>'+
+    '<span class="chip">Беларусь</span><span class="chip">диктант</span><span class="chip">тест</span></div>'+
+    '<div class="secBtns">'+
+    '<button class="btn" data-act="varAgain">🧪 Собрать новый вариант</button>'+
+    '<button class="btn ghost" data-act="close">Закрыть</button></div>');
+}
+function variantClick(e){
+  if(!vCur||vLocked)return;
+  var t=vCur.task;
+  if(t.kind!=='wclick'&&t.kind!=='bclick')return;
+  var cv=$('varCv'), r=cv.getBoundingClientRect();
+  var x=(e.clientX-r.left)*(cv.width/r.width), y=(e.clientY-r.top)*(cv.height/r.height);
+  vClick=vCur.mapType==='bel'?[bLon(x),bLat(y)]:[wLon(x),wLat(y)];
+  drawVarAll();
+}
+
+/* ================= МОДАЛЬНОЕ ОКНО ================= */
+function openModal(html){$('modalCard').innerHTML=html;$('modal').classList.remove('hidden');}
+function closeModal(){$('modal').classList.add('hidden');}
+
+/* ================= ПЕРЕКЛЮЧЕНИЕ РЕЖИМОВ ================= */
+var CURRENT='topo';
+function switchMode(mode){
+  CURRENT=mode;
+  Array.prototype.forEach.call(document.querySelectorAll('.tab'),function(b){
+    b.classList.toggle('on',b.dataset.mode===mode);
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('.screen'),function(s){
+    s.classList.toggle('on',s.id==='sc-'+mode);
+  });
+  if(mode==='topo'){
+    if(!topoTasks.length)startTopoRound(); else drawTopoAll();
+  } else if(mode==='profile'){
+    if(!PROF.a)startProfile(); else drawProfAll();
+  } else if(mode==='world'){
+    if(!wTasks.length)startWorldRound(); else drawWorldAll();
+  } else if(mode==='dict'){
+    if(!dictRes.length&&!dictLocked&&dictIdx===0)showDict();
+  }
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function setWMode(m){
+  WMODE=m;
+  $('wbWorld').classList.toggle('on',m==='world');
+  $('wbBel').classList.toggle('on',m==='bel');
+  startWorldRound();
+}
+
+/* ================= ОБРАБОТЧИКИ ================= */
+function bindAll(){
+  /* вкладки */
+  Array.prototype.forEach.call(document.querySelectorAll('.tab'),function(b){
+    b.addEventListener('click',function(){switchMode(b.dataset.mode);});
+  });
+  /* модальное окно */
+  $('modal').addEventListener('click',function(e){
+    var b=e.target.closest?e.target.closest('[data-act]'):null;
+    if(!b)return;
+    var act=b.dataset.act;
+    if(act==='close'){closeModal();return;}
+    closeModal();
+    if(act==='topoAgain')startTopoRound();
+    else if(act==='topoNewMap'){newTopoMap();startTopoRound();}
+    else if(act==='profAgain')startProfile();
+    else if(act==='worldAgain')startWorldRound();
+    else if(act==='toBel')setWMode('bel');
+    else if(act==='toWorld')setWMode('world');
+    else if(act==='dictAgain')startDict();
+    else if(act==='toVariant')switchMode('variant');
+    else if(act==='varAgain')startVariant();
+  });
+  /* топокарта */
+  $('btnGrid').addEventListener('click',function(){
+    TOP_OPTS.grid=!TOP_OPTS.grid;
+    this.classList.toggle('on',TOP_OPTS.grid); drawTopoAll();
+  });
+  $('btnLegend').addEventListener('click',function(){
+    TOP_OPTS.legend=!TOP_OPTS.legend;
+    this.classList.toggle('on',TOP_OPTS.legend); drawTopoAll();
+  });
+  $('btnShowAns').addEventListener('click',function(){topoAnswer(true);});
+  $('btnNewMap').addEventListener('click',function(){newTopoMap();startTopoRound();});
+  $('tpCheck').addEventListener('click',function(){topoAnswer(false);});
+  $('tpNext').addEventListener('click',function(){topoNext();});
+  $('tpRestart').addEventListener('click',function(){startTopoRound();});
+  /* профиль */
+  $('pfGrid').addEventListener('click',function(){
+    this.classList.toggle('on'); drawProfAll();
+  });
+  $('pfEraser').addEventListener('click',function(){
+    PROF.pts.forEach(function(p){p.v=(PROF.yMin+PROF.yMax)/2;p.ok=null;});
+    PROF.revealed=false; PROF.locked=false; drawGraph();
+  });
+  $('pfNew').addEventListener('click',function(){startProfile();});
+  $('ppCheck').addEventListener('click',function(){profCheck();});
+  $('ppNext').addEventListener('click',function(){profNext();});
+  $('ppTheory').addEventListener('click',function(){
+    openModal('<h2>Как строить профиль</h2>'+
+      '<p>1. Проведите линию сечения А → Б на карте, отметьте все точки пересечения с горизонталями.</p>'+
+      '<p>2. Перенесите расстояния по горизонтали, а высоты — по вертикали (масштаб по вертикали крупнее, чем по горизонтали).</p>'+
+      '<p>3. Соедините точки плавной линией: чем чаще горизонтали на сечении, тем круче склон; слияние горизонтали означает обрыв.</p>'+
+      '<p>4. Заполните площадь сечения штриховкой, подпишите высоты точек А и Б.</p>'+
+      '<div class="secBtns"><button class="btn" data-act="close">Понятно</button></div>');
+  });
+  /* контурная карта */
+  $('wbWorld').addEventListener('click',function(){setWMode('world');});
+  $('wbBel').addEventListener('click',function(){setWMode('bel');});
+  $('wbGrid').addEventListener('click',function(){
+    W_OPTS.grid=!W_OPTS.grid; this.classList.toggle('on',W_OPTS.grid); drawWorldAll();
+  });
+  $('wbShowAns').addEventListener('click',function(){worldAnswer(true);});
+  $('wpCheck').addEventListener('click',function(){worldAnswer(false);});
+  $('wpNext').addEventListener('click',function(){worldNext();});
+  $('wpRestart').addEventListener('click',function(){startWorldRound();});
+  $('worldCv').addEventListener('pointerdown',function(e){
+    if(wLocked||!wCur||!wCur.clickable)return;
+    var r=this.getBoundingClientRect();
+    var x=(e.clientX-r.left)*(WW/r.width), y=(e.clientY-r.top)*(WH/r.height);
+    wClick=WMODE==='bel'?[bLon(x),bLat(y)]:[wLon(x),wLat(y)];
+    drawWorldAll();
+  });
+  $('varCv').addEventListener('pointerdown',variantClick);
+  /* диктант */
+  $('dcCheck').addEventListener('click',function(){dictAnswer();});
+  $('dcNext').addEventListener('click',function(){dictNext();});
+  $('dcRestart').addEventListener('click',function(){startDict();});
+  $('dcIn').addEventListener('keydown',function(e){
+    if(e.key!=='Enter')return;
+    e.preventDefault();
+    if(dictLocked)dictNext(); else dictAnswer();
+  });
+  /* вариант */
+  $('vStart').addEventListener('click',function(){startVariant();});
+  $('vAbort').addEventListener('click',function(){
+    vItems=[]; vCur=null;
+    $('vQ').innerHTML='Вариант сброшен. Нажмите «Начать вариант», чтобы собрать задания.';
+    $('vIn').innerHTML=''; $('vProg').innerHTML=''; $('vCnt').textContent='';
+    $('vFb').className='fb'; $('vCheck').style.display='none'; $('vNext').style.display='none';
+    $('varMapWrap').style.display='none';
+  });
+  $('vCheck').addEventListener('click',function(){variantCheck();});
+  $('vNext').addEventListener('click',function(){varNext();});
+  $('vCheck').style.display='none'; $('vNext').style.display='none';
+  /* перетаскивание точек профиля */
+  var graph=$('graphCv'), dragIdx=-1;
+  function gPos(ev){
+    var r=graph.getBoundingClientRect();
+    return [(ev.clientX-r.left)*(GW/r.width),(ev.clientY-r.top)*(GH/r.height)];
+  }
+  function updPt(p){
+    if(dragIdx<0)return;
+    var v=clamp(Math.round(profY2v(p[1])),PROF.yMin,PROF.yMax);
+    PROF.pts[dragIdx].v=v; PROF.pts[dragIdx].ok=null; drawGraph();
+  }
+  graph.addEventListener('pointerdown',function(e){
+    if(CURRENT!=='profile'||PROF.stage!==0||PROF.locked||!PROF.pts.length)return;
+    var p=gPos(e), best=-1, bd=1e9;
+    PROF.pts.forEach(function(pt,i){
+      var d=Math.abs(profGx(pt.f)-p[0]);
+      if(d<bd){bd=d;best=i;}
+    });
+    if(bd>46)return;
+    dragIdx=best;
+    try{graph.setPointerCapture(e.pointerId);}catch(err){}
+    updPt(p); e.preventDefault();
+  });
+  graph.addEventListener('pointermove',function(e){updPt(gPos(e));});
+  graph.addEventListener('pointerup',function(){dragIdx=-1;});
+  graph.addEventListener('pointercancel',function(){dragIdx=-1;});
+  /* Enter по всей странице */
+  document.addEventListener('keydown',function(e){
+    if(e.key!=='Enter')return;
+    if(e.target&&e.target.id==='dcIn')return;
+    if(e.target&&e.target.tagName==='INPUT'){e.preventDefault();}
+    if(CURRENT==='topo'){e.preventDefault(); topoLocked?topoNext():topoAnswer(false);}
+    else if(CURRENT==='world'){e.preventDefault(); wLocked?worldNext():worldAnswer(false);}
+    else if(CURRENT==='profile'){e.preventDefault(); profCheck();}
+    else if(CURRENT==='variant'){e.preventDefault(); vLocked?varNext():variantCheck();}
+  });
+  /* клик по карте мира — координаты */
+  window.addEventListener('resize',function(){
+    if(CURRENT==='topo')drawTopoAll();
+    else if(CURRENT==='world')drawWorldAll();
+    else if(CURRENT==='profile')drawProfAll();
+  });
+}
+
+/* ================= ЗАПУСК ================= */
+refreshHud();
+bindAll();
+openModal('<span class="bigEmoji">🧭</span><h1>Строим топографическую карту…</h1>'+
+  '<p>Генерируем рельеф, горизонтали, реки, дороги и условные знаки листа 1:25 000.</p>');
+setTimeout(function(){
+  startTopoRound();
+  closeModal();
+},80);
+
+</script>
+</body>
+</html>
